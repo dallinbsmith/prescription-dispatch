@@ -8,6 +8,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./sync-user": {
+      "types": "./dist/sync-user.d.ts",
+      "import": "./dist/sync-user.js"
     }
   },
   "scripts": {
@@ -19,12 +23,19 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@auth0/nextjs-auth0": "^4.15.0",
+    "@rx/database": "workspace:*",
     "@rx/types": "workspace:*"
+  },
+  "peerDependencies": {
+    "next": ">=14.0.0"
   },
   "devDependencies": {
     "@rx/eslint-config": "workspace:*",
     "@rx/typescript-config": "workspace:*",
+    "@types/node": "^22.10.5",
     "eslint": "^9.17.0",
+    "next": "^15.1.0",
     "typescript": "^5.7.2"
   }
 }

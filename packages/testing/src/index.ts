@@ -1,3 +1,4 @@
+import { jest } from "@jest/globals";
 import type { Patient, Prescription, User } from "@rx/types";
 
 export const createMockUser = (overrides: Partial<User> = {}): User => ({
@@ -13,7 +14,8 @@ export const createMockUser = (overrides: Partial<User> = {}): User => ({
 });
 
 export const createMockPatient = (overrides: Partial<Patient> = {}): Patient => ({
-  ...createMockUser({ role: "patient" }),
+  ...createMockUser(),
+  role: "patient" as const,
   dateOfBirth: new Date("1990-01-15"),
   allergies: [],
   medications: [],
@@ -39,11 +41,21 @@ export const createMockPrescription = (
 export const wait = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-export const mockFetch = (response: unknown, status = 200) => {
-  return jest.fn().mockResolvedValue({
-    ok: status >= 200 && status < 300,
-    status,
-    json: () => Promise.resolve(response),
-    text: () => Promise.resolve(JSON.stringify(response)),
-  });
+export interface MockResponse {
+  ok: boolean;
+  status: number;
+  json: () => Promise<unknown>;
+  text: () => Promise<string>;
+}
+
+export const createMockResponse = (response: unknown, status = 200): MockResponse => ({
+  ok: status >= 200 && status < 300,
+  status,
+  json: () => Promise.resolve(response),
+  text: () => Promise.resolve(JSON.stringify(response)),
+});
+
+export const mockFetch = (response: unknown, status = 200): (() => Promise<MockResponse>) => {
+  const mockResponse = createMockResponse(response, status);
+  return jest.fn<() => Promise<MockResponse>>().mockResolvedValue(mockResponse);
 };

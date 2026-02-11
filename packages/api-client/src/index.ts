@@ -14,15 +14,29 @@ export const createApiClient = (config: ApiClientConfig) => {
   ): Promise<ApiResponse<T>> => {
     const url = `${baseUrl}${endpoint}`;
 
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      ...options.headers,
     };
+
+    if (options.headers) {
+      const incomingHeaders = options.headers;
+      if (incomingHeaders instanceof Headers) {
+        incomingHeaders.forEach((value, key) => {
+          headers[key] = value;
+        });
+      } else if (Array.isArray(incomingHeaders)) {
+        incomingHeaders.forEach(([key, value]) => {
+          headers[key] = value;
+        });
+      } else {
+        Object.assign(headers, incomingHeaders);
+      }
+    }
 
     if (getAccessToken) {
       const token = await getAccessToken();
       if (token) {
-        (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+        headers.Authorization = `Bearer ${token}`;
       }
     }
 
@@ -36,7 +50,7 @@ export const createApiClient = (config: ApiClientConfig) => {
       return {
         data: null as unknown as T,
         success: false,
-        error: error || `HTTP ${response.status}`,
+        error: error || `HTTP ${String(response.status)}`,
       };
     }
 

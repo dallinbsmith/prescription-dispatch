@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 244 245 248;
+    --foreground: 34 35 38;
+  }
+
+  .dark {
+    --background: 34 35 38;
+    --foreground: 244 245 248;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-neutral-200;
+  }
+
+  body {
+    @apply bg-[rgb(var(--background))] text-[rgb(var(--foreground))];
+  }
+}

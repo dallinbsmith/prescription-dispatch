@@ -9,9 +9,41 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./badge": {
+      "types": "./dist/badge.d.ts",
+      "import": "./dist/badge.js"
+    },
     "./button": {
       "types": "./dist/button.d.ts",
       "import": "./dist/button.js"
+    },
+    "./card": {
+      "types": "./dist/card.d.ts",
+      "import": "./dist/card.js"
+    },
+    "./dialog": {
+      "types": "./dist/dialog.d.ts",
+      "import": "./dist/dialog.js"
+    },
+    "./input": {
+      "types": "./dist/input.d.ts",
+      "import": "./dist/input.js"
+    },
+    "./label": {
+      "types": "./dist/label.d.ts",
+      "import": "./dist/label.js"
+    },
+    "./select": {
+      "types": "./dist/select.d.ts",
+      "import": "./dist/select.js"
+    },
+    "./table": {
+      "types": "./dist/table.d.ts",
+      "import": "./dist/table.js"
+    },
+    "./toast": {
+      "types": "./dist/toast.d.ts",
+      "import": "./dist/toast.js"
     }
   },
   "scripts": {
@@ -23,9 +55,13 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.1.1",
+    "@radix-ui/react-toast": "^1.2.15",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "lucide-react": "^0.563.0",
     "tailwind-merge": "^2.6.0"
   },
   "peerDependencies": {

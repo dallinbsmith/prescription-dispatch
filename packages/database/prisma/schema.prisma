@@ -1,0 +1,557 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum Platform {
+  patient
+  doctor
+  pharmacy
+  employer
+}
+
+enum UserRole {
+  patient
+  caregiver
+  prescriber
+  pharmacist
+  technician
+  hr_admin
+  system_admin
+}
+
+enum ProviderType {
+  marketplace
+  employed
+}
+
+enum CredentialingStatus {
+  pending
+  approved
+  suspended
+}
+
+enum LicenseStatus {
+  active
+  expired
+  suspended
+}
+
+enum AppointmentType {
+  telemedicine
+  in_person
+}
+
+enum AppointmentStatus {
+  scheduled
+  confirmed
+  in_progress
+  completed
+  cancelled
+  no_show
+}
+
+enum PaymentMethod {
+  cash
+  insurance
+}
+
+enum ClaimStatus {
+  pending
+  submitted
+  accepted
+  rejected
+  paid
+}
+
+enum PrescriptionStatus {
+  pending
+  verified
+  compounding
+  quality_check
+  ready
+  shipped
+  delivered
+  cancelled
+}
+
+enum OrderStatus {
+  pending
+  processing
+  compounding
+  quality_check
+  packaging
+  shipped
+  delivered
+  cancelled
+}
+
+enum DosageForm {
+  injection
+  capsule
+  troche
+  cream
+  nasal_spray
+  sublingual
+  tablet
+  solution
+  suspension
+}
+
+enum InsurancePlanType {
+  hmo
+  ppo
+  epo
+  pos
+  hdhp
+}
+
+// =============================================================================
+// USER & IDENTITY
+// =============================================================================
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  phone     String?
+  auth0Id   String    @unique @map("auth0_id")
+  role      UserRole
+  platform  Platform
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  patient  Patient?
+  provider Provider?
+  employer EmployerAdmin?
+
+  @@map("users")
+}
+
+model Patient {
+  id          String   @id @default(cuid())
+  userId      String   @unique @map("user_id")
+  firstName   String   @map("first_name")
+  lastName    String   @map("last_name")
+  dateOfBirth DateTime @map("date_of_birth")
+  employerId  String?  @map("employer_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employer          Employer?         @relation(fields: [employerId], references: [id])
+  address           Address?
+  insurancePolicies InsurancePolicy[]
+  allergies         PatientAllergy[]
+  medications       PatientMedication[]
+  prescriptions     Prescription[]
+  orders            Order[]
+  appointments      Appointment[]
+  consultations     Consultation[]
+
+  @@map("patients")
+}
+
+model Address {
+  id        String  @id @default(cuid())
+  patientId String  @unique @map("patient_id")
+  street1   String
+  street2   String?
+  city      String
+  state     String
+  zipCode   String  @map("zip_code")
+  country   String  @default("US")
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
+}
+
+model PatientAllergy {
+  id        String   @id @default(cuid())
+  patientId String   @map("patient_id")
+  allergen  String
+  severity  String?
+  reaction  String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@map("patient_allergies")
+}
+
+model PatientMedication {
+  id         String   @id @default(cuid())
+  patientId  String   @map("patient_id")
+  name       String
+  dosage     String?
+  frequency  String?
+  startDate  DateTime? @map("start_date")
+  endDate    DateTime? @map("end_date")
+  isActive   Boolean   @default(true) @map("is_active")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@map("patient_medications")
+}
+
+model InsurancePolicy {
+  id              String            @id @default(cuid())
+  patientId       String            @map("patient_id")
+  payerId         String            @map("payer_id")
+  payerName       String            @map("payer_name")
+  memberId        String            @map("member_id")
+  groupNumber     String?           @map("group_number")
+  planType        InsurancePlanType @map("plan_type")
+  isPrimary       Boolean           @default(false) @map("is_primary")
+  effectiveDate   DateTime          @map("effective_date")
+  terminationDate DateTime?         @map("termination_date")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  patient Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  claims  InsuranceClaim[]
+
+  @@map("insurance_policies")
+}
+
+// =============================================================================
+// PROVIDER
+// =============================================================================
+
+model Provider {
+  id                   String              @id @default(cuid())
+  userId               String              @unique @map("user_id")
+  type                 ProviderType
+  npi                  String              @unique
+  firstName            String              @map("first_name")
+  lastName             String              @map("last_name")
+  credentialingStatus  CredentialingStatus @default(pending) @map("credentialing_status")
+  telemedicineEnabled  Boolean             @default(false) @map("telemedicine_enabled")
+  practiceName         String?             @map("practice_name")
+  employmentStartDate  DateTime?           @map("employment_start_date")
+  compensationModel    String?             @map("compensation_model")
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  licenses      StateLicense[]
+  specialties   ProviderSpecialty[]
+  appointments  Appointment[]
+  prescriptions Prescription[]
+
+  @@map("providers")
+}
+
+model StateLicense {
+  id             String        @id @default(cuid())
+  providerId     String        @map("provider_id")
+  state          String
+  licenseNumber  String        @map("license_number")
+  expirationDate DateTime      @map("expiration_date")
+  status         LicenseStatus @default(active)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, state])
+  @@map("state_licenses")
+}
+
+model ProviderSpecialty {
+  id         String @id @default(cuid())
+  providerId String @map("provider_id")
+  specialty  String
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, specialty])
+  @@map("provider_specialties")
+}
+
+// =============================================================================
+// EMPLOYER
+// =============================================================================
+
+model Employer {
+  id          String   @id @default(cuid())
+  companyName String   @map("company_name")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  admins    EmployerAdmin[]
+  employees Patient[]
+
+  @@map("employers")
+}
+
+model EmployerAdmin {
+  id         String   @id @default(cuid())
+  userId     String   @unique @map("user_id")
+  employerId String   @map("employer_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employer Employer @relation(fields: [employerId], references: [id], onDelete: Cascade)
+
+  @@map("employer_admins")
+}
+
+// =============================================================================
+// CONSULTATION (AI)
+// =============================================================================
+
+model Consultation {
+  id          String    @id @default(cuid())
+  patientId   String    @map("patient_id")
+  status      String    @default("in_progress")
+  startedAt   DateTime  @default(now()) @map("started_at")
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  patient      Patient                @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  messages     ConsultationMessage[]
+  summary      ConsultationSummary?
+  appointments Appointment[]
+
+  @@map("consultations")
+}
+
+model ConsultationMessage {
+  id             String   @id @default(cuid())
+  consultationId String   @map("consultation_id")
+  role           String
+  content        String
+  timestamp      DateTime @default(now())
+
+  consultation Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+
+  @@map("consultation_messages")
+}
+
+model ConsultationSummary {
+  id                 String   @id @default(cuid())
+  consultationId     String   @unique @map("consultation_id")
+  chiefComplaint     String   @map("chief_complaint")
+  symptomsSummary    String   @map("symptoms_summary")
+  relevantHistory    String?  @map("relevant_history")
+  riskFlags          String[]  @map("risk_flags")
+  durationOfSymptoms String?  @map("duration_of_symptoms")
+  severityAssessment String?  @map("severity_assessment")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  consultation Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+
+  @@map("consultation_summaries")
+}
+
+// =============================================================================
+// APPOINTMENT
+// =============================================================================
+
+model Appointment {
+  id             String            @id @default(cuid())
+  patientId      String            @map("patient_id")
+  providerId     String            @map("provider_id")
+  consultationId String?           @map("consultation_id")
+  scheduledAt    DateTime          @map("scheduled_at")
+  duration       Int               @default(30)
+  type           AppointmentType
+  status         AppointmentStatus @default(scheduled)
+  paymentMethod  PaymentMethod     @map("payment_method")
+  cashPrice      Decimal?          @map("cash_price") @db.Decimal(10, 2)
+  videoRoomId    String?           @map("video_room_id")
+  visitNotes     String?           @map("visit_notes")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  patient        Patient          @relation(fields: [patientId], references: [id])
+  provider       Provider         @relation(fields: [providerId], references: [id])
+  consultation   Consultation?    @relation(fields: [consultationId], references: [id])
+  insuranceClaim InsuranceClaim?
+  prescriptions  Prescription[]
+
+  @@map("appointments")
+}
+
+model InsuranceClaim {
+  id                    String      @id @default(cuid())
+  appointmentId         String      @unique @map("appointment_id")
+  insurancePolicyId     String      @map("insurance_policy_id")
+  status                ClaimStatus @default(pending)
+  claimAmount           Decimal     @map("claim_amount") @db.Decimal(10, 2)
+  patientResponsibility Decimal     @map("patient_responsibility") @db.Decimal(10, 2)
+  submittedAt           DateTime?   @map("submitted_at")
+  paidAt                DateTime?   @map("paid_at")
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
+
+  appointment     Appointment     @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  insurancePolicy InsurancePolicy @relation(fields: [insurancePolicyId], references: [id])
+
+  @@map("insurance_claims")
+}
+
+// =============================================================================
+// DRUG CATALOG
+// =============================================================================
+
+model Compound {
+  id                   String     @id @default(cuid())
+  name                 String
+  genericName          String?    @map("generic_name")
+  description          String?
+  dosageForm           DosageForm @map("dosage_form")
+  defaultStrength      String?    @map("default_strength")
+  requiresPrescription Boolean    @default(true) @map("requires_prescription")
+  isActive             Boolean    @default(true) @map("is_active")
+  cashPrice            Decimal?   @map("cash_price") @db.Decimal(10, 2)
+  createdAt            DateTime   @default(now()) @map("created_at")
+  updatedAt            DateTime   @updatedAt @map("updated_at")
+
+  ingredients   CompoundIngredient[]
+  prescriptions Prescription[]
+
+  @@map("compounds")
+}
+
+model Ingredient {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  compounds CompoundIngredient[]
+
+  @@map("ingredients")
+}
+
+model CompoundIngredient {
+  id           String @id @default(cuid())
+  compoundId   String @map("compound_id")
+  ingredientId String @map("ingredient_id")
+  quantity     String
+  unit         String
+
+  compound   Compound   @relation(fields: [compoundId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+
+  @@unique([compoundId, ingredientId])
+  @@map("compound_ingredients")
+}
+
+// =============================================================================
+// PRESCRIPTION
+// =============================================================================
+
+model Prescription {
+  id            String             @id @default(cuid())
+  patientId     String             @map("patient_id")
+  providerId    String             @map("provider_id")
+  appointmentId String?            @map("appointment_id")
+  compoundId    String             @map("compound_id")
+  quantity      Int
+  refills       Int                @default(0)
+  refillsUsed   Int                @default(0) @map("refills_used")
+  directions    String
+  status        PrescriptionStatus @default(pending)
+  prescribedAt  DateTime           @default(now()) @map("prescribed_at")
+  verifiedAt    DateTime?          @map("verified_at")
+  verifiedBy    String?            @map("verified_by")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  patient     Patient      @relation(fields: [patientId], references: [id])
+  provider    Provider     @relation(fields: [providerId], references: [id])
+  appointment Appointment? @relation(fields: [appointmentId], references: [id])
+  compound    Compound     @relation(fields: [compoundId], references: [id])
+  orders      Order[]
+
+  @@map("prescriptions")
+}
+
+// =============================================================================
+// ORDER & FULFILLMENT
+// =============================================================================
+
+model Order {
+  id             String      @id @default(cuid())
+  orderNumber    String      @unique @map("order_number")
+  patientId      String      @map("patient_id")
+  prescriptionId String      @map("prescription_id")
+  status         OrderStatus @default(pending)
+  totalAmount    Decimal     @map("total_amount") @db.Decimal(10, 2)
+  paidAt         DateTime?   @map("paid_at")
+  shippedAt      DateTime?   @map("shipped_at")
+  deliveredAt    DateTime?   @map("delivered_at")
+  trackingNumber String?     @map("tracking_number")
+  carrier        String?
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  patient      Patient       @relation(fields: [patientId], references: [id])
+  prescription Prescription  @relation(fields: [prescriptionId], references: [id])
+  shipAddress  OrderAddress?
+  statusLogs   OrderStatusLog[]
+
+  @@map("orders")
+}
+
+model OrderAddress {
+  id      String  @id @default(cuid())
+  orderId String  @unique @map("order_id")
+  street1 String
+  street2 String?
+  city    String
+  state   String
+  zipCode String  @map("zip_code")
+  country String  @default("US")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_addresses")
+}
+
+model OrderStatusLog {
+  id        String      @id @default(cuid())
+  orderId   String      @map("order_id")
+  status    OrderStatus
+  note      String?
+  createdAt DateTime    @default(now()) @map("created_at")
+  createdBy String?     @map("created_by")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_status_logs")
+}
+
+// =============================================================================
+// AUDIT LOG
+// =============================================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?  @map("user_id")
+  action     String
+  resource   String
+  resourceId String?  @map("resource_id")
+  details    Json?
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([resource, resourceId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

@@ -10,7 +10,7 @@ export class AppError extends Error {
   constructor(
     public code: string,
     message: string,
-    public statusCode: number = 500,
+    public statusCode = 500,
     public details?: Record<string, unknown>
   ) {
     super(message);

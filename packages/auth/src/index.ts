@@ -1,5 +1,9 @@
 import type { Platform, UserRole } from "@rx/types";
 
+export * from "./auth0";
+export * from "./types";
+export * from "./middleware";
+
 export interface Permission {
   action: string;
   resource: string;
@@ -51,6 +55,9 @@ export const PERMISSIONS: Record<UserRole, Permission[]> = {
   system_admin: [
     { action: "*", resource: "*" },
   ],
+  developer: [
+    { action: "*", resource: "*" },
+  ],
 };
 
 export const hasPermission = (
@@ -79,6 +86,18 @@ export const getPlatformForRole = (role: UserRole): Platform => {
     case "hr_admin":
       return "employer";
     case "system_admin":
+    case "developer":
       return "pharmacy";
+    default: {
+      const _exhaustiveCheck: never = role;
+      throw new Error(`Unhandled role: ${String(_exhaustiveCheck)}`);
+    }
   }
 };
+
+export const PORTAL_ROLES = {
+  patient: ["patient", "caregiver", "developer"],
+  provider: ["prescriber", "developer"],
+  pharmacy: ["pharmacist", "technician", "system_admin", "developer"],
+  employer: ["hr_admin", "developer"],
+} as const;

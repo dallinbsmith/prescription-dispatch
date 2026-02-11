@@ -46,10 +46,6 @@ export const formatPrescriptionId = (id: string): string => {
   return `RX-${cleaned}`;
 };
 
-export const cn = (...classes: (string | undefined | null | false)[]): string => {
-  return classes.filter(Boolean).join(" ");
-};
-
 export const sleep = (ms: number): Promise<void> => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
@@ -61,7 +57,9 @@ export const debounce = <T extends (...args: Parameters<T>) => void>(
   let timeoutId: ReturnType<typeof setTimeout>;
   return (...args: Parameters<T>) => {
     clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => fn(...args), delay);
+    timeoutId = setTimeout(() => {
+      fn(...args);
+    }, delay);
   };
 };
 

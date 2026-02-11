@@ -21,7 +21,16 @@
   "dependencies": {
     "@rx/types": "workspace:*"
   },
+  "peerDependencies": {
+    "@jest/globals": "^29.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@jest/globals": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@jest/globals": "^29.7.0",
     "@rx/eslint-config": "workspace:*",
     "@rx/typescript-config": "workspace:*",
     "eslint": "^9.17.0",

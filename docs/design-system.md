@@ -2503,15 +2503,19 @@ Need spacing between elements?
 
 ### Border Radius
 
+**Design Decision**: This platform uses sharp corners exclusively. No rounded corners are used anywhere in the interface. This creates a clinical, professional aesthetic aligned with healthcare precision.
+
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--radius-none` | 0px | No rounding |
-| `--radius-sm` | 4px | Subtle rounding (inputs, badges) |
-| `--radius-md` | 6px | Standard rounding (buttons) |
-| `--radius-lg` | 8px | Cards, modals |
-| `--radius-xl` | 12px | Large cards, panels |
-| `--radius-2xl` | 16px | Feature cards |
-| `--radius-full` | 9999px | Pills, avatars |
+| `--radius-none` | 0px | All elements |
+| `--radius-sm` | 0px | All elements |
+| `--radius-md` | 0px | All elements |
+| `--radius-lg` | 0px | All elements |
+| `--radius-xl` | 0px | All elements |
+| `--radius-2xl` | 0px | All elements |
+| `--radius-full` | 0px | All elements |
+
+> **Note**: The 4px grid system applies to spacing only, not to border radius.
 
 ### Border Widths
 
