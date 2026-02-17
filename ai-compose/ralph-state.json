@@ -1,0 +1,16 @@
+{
+  "current_step": 1,
+  "total_steps": 29,
+  "completed_steps": [],
+  "verification_results": [],
+  "drift_reviews": [],
+  "available_inputs": [
+    "ai-compose/CORE_PRINCIPLES.md",
+    "ai-compose/ARCHITECTURE_SPECIFICATION.md",
+    "ai-compose/DESIGN_SPECIFICATION.md",
+    "ai-compose/TECHNICAL_SPECIFICATION.md",
+    "ai-compose/IMPLEMENTATION_PLAN.md"
+  ],
+  "status": "in_progress",
+  "iteration": 1
+}
