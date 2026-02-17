@@ -439,12 +439,21 @@ execute_with_tool() {
   local mode="$2"
   local result
   local exit_code
+  local prompt_file
+
+  # Write prompt to temp file to avoid argument length limits
+  prompt_file=$(mktemp)
+  printf '%s' "$prompt" > "$prompt_file"
 
   if [[ "$TOOL" == "claude" ]]; then
-    result=$(echo "$prompt" | claude --print 2>&1) || exit_code=$?
+    # Use -p for print mode, read prompt from file via stdin
+    # --dangerously-skip-permissions to avoid interactive prompts
+    result=$(claude -p --dangerously-skip-permissions < "$prompt_file" 2>&1) || exit_code=$?
   else
-    result=$(echo "$prompt" | $TOOL 2>&1) || exit_code=$?
+    result=$($TOOL < "$prompt_file" 2>&1) || exit_code=$?
   fi
+
+  rm -f "$prompt_file"
 
   if [[ -n "$exit_code" && "$exit_code" -ne 0 ]]; then
     echo "WARNING: Tool exited with code $exit_code" >&2
