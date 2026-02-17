@@ -447,8 +447,7 @@ execute_with_tool() {
 
   if [[ "$TOOL" == "claude" ]]; then
     # Use -p for print mode, read prompt from file via stdin
-    # --dangerously-skip-permissions to avoid interactive prompts
-    result=$(claude -p --dangerously-skip-permissions < "$prompt_file" 2>&1) || exit_code=$?
+    result=$(claude -p < "$prompt_file" 2>&1) || exit_code=$?
   else
     result=$($TOOL < "$prompt_file" 2>&1) || exit_code=$?
   fi
