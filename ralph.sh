@@ -456,6 +456,7 @@ execute_with_tool() {
 
   if [[ -n "$exit_code" && "$exit_code" -ne 0 ]]; then
     echo "WARNING: Tool exited with code $exit_code" >&2
+    echo "DEBUG: Result preview: ${result:0:500}" >&2
   fi
 
   echo "$result"
