@@ -103,28 +103,28 @@ update_state() {
 build_context() {
   echo "<CONTEXT>"
 
-  # Include all available input files
+  # Always include IMPLEMENTATION_PLAN directly (essential for knowing steps)
+  if [[ -f "$AI_COMPOSE_DIR/IMPLEMENTATION_PLAN.md" ]]; then
+    echo "<IMPLEMENTATION_PLAN>"
+    cat "$AI_COMPOSE_DIR/IMPLEMENTATION_PLAN.md"
+    echo "</IMPLEMENTATION_PLAN>"
+  fi
+
+  # Reference other spec files by path (Claude will read them as needed)
+  echo "<SPEC_FILES>"
+  echo "Read these specification files as needed:"
   for input in "${AVAILABLE_INPUTS[@]}"; do
-    if [[ -f "$input" ]]; then
-      local filename
-      filename=$(basename "$input" .md)
-      echo "<$filename>"
-      cat "$input"
-      echo "</$filename>"
+    local filename
+    filename=$(basename "$input")
+    if [[ "$filename" != "IMPLEMENTATION_PLAN.md" && -f "$input" ]]; then
+      echo "- $input"
     fi
   done
+  echo "</SPEC_FILES>"
 
-  echo "<PROGRESS>"
-  if [[ -f "$PROGRESS_FILE" ]]; then
-    cat "$PROGRESS_FILE"
-  else
-    echo "No progress yet."
-  fi
-  echo "</PROGRESS>"
-
-  echo "<STATE>"
+  echo "<CURRENT_STATE>"
   cat "$STATE_FILE"
-  echo "</STATE>"
+  echo "</CURRENT_STATE>"
   echo "</CONTEXT>"
 }
 
@@ -160,10 +160,11 @@ $context
 You are executing step $step of the IMPLEMENTATION_PLAN.
 
 INSTRUCTIONS:
-1. Read the IMPLEMENTATION_PLAN and identify step $step
-2. Execute ONLY step $step - do not proceed to other steps
-3. After implementation, verify your work against: $verify_against
-4. Document what you implemented and any deviations
+1. First, READ the specification files listed in SPEC_FILES using your Read tool
+2. Identify step $step from the IMPLEMENTATION_PLAN
+3. Execute ONLY step $step - do not proceed to other steps
+4. After implementation, verify your work against: $verify_against
+5. Document what you implemented and any deviations
 
 OUTPUT FORMAT:
 <STEP_EXECUTION>
@@ -456,7 +457,7 @@ execute_with_tool() {
 
   if [[ -n "$exit_code" && "$exit_code" -ne 0 ]]; then
     echo "WARNING: Tool exited with code $exit_code" >&2
-    echo "DEBUG: Result preview: ${result:0:500}" >&2
+    echo "Response: ${result:0:200}" >&2
   fi
 
   echo "$result"
