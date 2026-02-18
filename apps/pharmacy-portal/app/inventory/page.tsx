@@ -1,3 +1,4 @@
+
 import { Badge } from "@rx/ui/badge";
 import { Button } from "@rx/ui/button";
 import { Input } from "@rx/ui/input";
@@ -9,75 +10,52 @@ import {
   TableHeader,
   TableRow,
 } from "@rx/ui/table";
+import { cookies } from "next/headers";
 
-const mockInventory = [
-  {
-    id: "INV-001",
-    name: "Testosterone Cypionate Powder",
-    category: "API",
-    quantity: 500,
-    unit: "g",
-    reorderPoint: 200,
-    status: "in_stock",
-    expiryDate: "2025-06-15",
-    lotNumber: "TC-2024-001",
-  },
-  {
-    id: "INV-002",
-    name: "Semaglutide Powder",
-    category: "API",
-    quantity: 50,
-    unit: "g",
-    reorderPoint: 100,
-    status: "low_stock",
-    expiryDate: "2024-12-01",
-    lotNumber: "SEM-2024-003",
-  },
-  {
-    id: "INV-003",
-    name: "Bacteriostatic Water",
-    category: "Diluent",
-    quantity: 200,
-    unit: "vials",
-    reorderPoint: 50,
-    status: "in_stock",
-    expiryDate: "2025-03-20",
-    lotNumber: "BW-2024-012",
-  },
-  {
-    id: "INV-004",
-    name: "Sermorelin Acetate",
-    category: "API",
-    quantity: 25,
-    unit: "g",
-    reorderPoint: 30,
-    status: "low_stock",
-    expiryDate: "2024-09-15",
-    lotNumber: "SER-2024-002",
-  },
-  {
-    id: "INV-005",
-    name: "Sterile Vials 10mL",
-    category: "Packaging",
-    quantity: 1500,
-    unit: "units",
-    reorderPoint: 500,
-    status: "in_stock",
-    expiryDate: "N/A",
-    lotNumber: "VL10-2024-005",
-  },
-  {
-    id: "INV-006",
-    name: "BPC-157",
-    category: "API",
-    quantity: 5,
-    unit: "g",
-    reorderPoint: 20,
-    status: "critical",
-    expiryDate: "2024-08-01",
-    lotNumber: "BPC-2024-001",
-  },
-];
+interface InventoryItem {
+  id: string;
+  name: string;
+  category: string;
+  quantity: number;
+  unit: string;
+  reorderPoint: number;
+  status: "in_stock" | "low_stock" | "critical";
+  lotNumber: string;
+  expiryDate: string;
+  isActive: boolean;
+  usedInCompounds: { id: string; name: string }[];
+}
+
+interface InventoryResponse {
+  data: InventoryItem[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    hasMore: boolean;
+  };
+}
+
+const getInventory = async (): Promise<InventoryResponse | null> => {
+  try {
+    const cookieStore = await cookies();
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+    const response = await fetch(`${baseUrl}/api/inventory?pageSize=50`, {
+      headers: {
+        Cookie: cookieStore.toString(),
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as InventoryResponse;
+  } catch {
+    return null;
+  }
+};
 
 const getStatusBadge = (status: string) => {
   const config: Record<string, { label: string; variant: "success" | "warning" | "error" }> = {
@@ -89,14 +67,17 @@ const getStatusBadge = (status: string) => {
   return <Badge variant={variant}>{label}</Badge>;
 };
 
-const InventoryPage = () => {
+const InventoryPage = async () => {
+  const result = await getInventory();
+  const inventory = result?.data ?? [];
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Inventory Management</h1>
           <p className="mt-1 text-neutral-600">
-            Track and manage pharmacy inventory
+            {result?.pagination.total ?? 0} items in inventory
           </p>
         </div>
         <div className="flex gap-2">
@@ -106,10 +87,7 @@ const InventoryPage = () => {
       </div>
 
       <div className="mb-6 flex gap-4">
-        <Input
-          placeholder="Search inventory..."
-          className="max-w-md"
-        />
+        <Input placeholder="Search inventory..." className="max-w-md" />
         <Button variant="outline">Filter</Button>
       </div>
 
@@ -128,37 +106,45 @@ const InventoryPage = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockInventory.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium">{item.name}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{item.category}</Badge>
-                </TableCell>
-                <TableCell>
-                  {item.quantity} {item.unit}
-                </TableCell>
-                <TableCell>
-                  {item.reorderPoint} {item.unit}
-                </TableCell>
-                <TableCell>{getStatusBadge(item.status)}</TableCell>
-                <TableCell className="text-sm text-neutral-500">
-                  {item.lotNumber}
-                </TableCell>
-                <TableCell className="text-sm text-neutral-500">
-                  {item.expiryDate}
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      Adjust
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      Order
-                    </Button>
-                  </div>
+            {inventory.length > 0 ? (
+              inventory.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{item.category}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    {item.quantity} {item.unit}
+                  </TableCell>
+                  <TableCell>
+                    {item.reorderPoint} {item.unit}
+                  </TableCell>
+                  <TableCell>{getStatusBadge(item.status)}</TableCell>
+                  <TableCell className="text-sm text-neutral-500">
+                    {item.lotNumber}
+                  </TableCell>
+                  <TableCell className="text-sm text-neutral-500">
+                    {item.expiryDate}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        Adjust
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Order
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={8} className="py-8 text-center text-neutral-500">
+                  No inventory items found
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>

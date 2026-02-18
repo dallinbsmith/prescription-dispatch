@@ -1,16 +1,71 @@
+
 import { Button } from "@rx/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@rx/ui/card";
 import { Input } from "@rx/ui/input";
 import { Label } from "@rx/ui/label";
+import { cookies } from "next/headers";
 
-const commonMedications = [
-  { name: "Testosterone Cypionate", dosages: ["100mg/mL", "200mg/mL"] },
-  { name: "Semaglutide", dosages: ["0.25mg", "0.5mg", "1mg", "2.4mg"] },
-  { name: "Sermorelin", dosages: ["6mg vial", "9mg vial", "15mg vial"] },
-  { name: "BPC-157", dosages: ["5mg vial", "10mg vial"] },
-];
+interface Compound {
+  id: string;
+  name: string;
+  dosageForm: string;
+  strength: string | null;
+  isActive: boolean;
+}
 
-const PrescribePage = () => {
+interface CompoundsResponse {
+  data: Compound[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    hasMore: boolean;
+  };
+}
+
+const getCompounds = async (): Promise<CompoundsResponse | null> => {
+  try {
+    const cookieStore = await cookies();
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+    const response = await fetch(
+      `${baseUrl}/api/compounds?isActive=true&pageSize=20`,
+      {
+        headers: {
+          Cookie: cookieStore.toString(),
+        },
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return await response.json() as CompoundsResponse;
+  } catch {
+    return null;
+  }
+};
+
+const formatDosageForm = (form: string) => {
+  const labels: Record<string, string> = {
+    injection: "Injection",
+    capsule: "Capsule",
+    troche: "Troche",
+    cream: "Cream",
+    nasal_spray: "Nasal Spray",
+    sublingual: "Sublingual",
+    tablet: "Tablet",
+    solution: "Solution",
+    suspension: "Suspension",
+  };
+  return labels[form] ?? form;
+};
+
+const PrescribePage = async () => {
+  const result = await getCompounds();
+  const compounds = result?.data ?? [];
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -34,22 +89,18 @@ const PrescribePage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="medication">Medication</Label>
-                <Input id="medication" placeholder="Search medications..." />
+                <Label htmlFor="medication">Compound</Label>
+                <Input id="medication" placeholder="Search compounds..." />
               </div>
 
               <div className="grid gap-4 sm:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="dosage">Dosage</Label>
-                  <Input id="dosage" placeholder="e.g., 200mg/mL" />
-                </div>
                 <div className="space-y-2">
                   <Label htmlFor="quantity">Quantity</Label>
                   <Input id="quantity" type="number" placeholder="30" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="refills">Refills</Label>
-                  <Input id="refills" type="number" placeholder="2" />
+                  <Label htmlFor="refills">Refills (0-12)</Label>
+                  <Input id="refills" type="number" placeholder="2" min="0" max="12" />
                 </div>
               </div>
 
@@ -61,17 +112,9 @@ const PrescribePage = () => {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="notes">Clinical Notes (optional)</Label>
-                <Input
-                  id="notes"
-                  placeholder="Additional notes for the pharmacist..."
-                />
-              </div>
-
               <div className="flex gap-3">
                 <Button>Submit Prescription</Button>
-                <Button variant="outline">Save as Draft</Button>
+                <Button variant="outline">Cancel</Button>
               </div>
             </CardContent>
           </Card>
@@ -80,22 +123,33 @@ const PrescribePage = () => {
         <div>
           <Card>
             <CardHeader>
-              <CardTitle>Quick Select</CardTitle>
-              <CardDescription>Common medications</CardDescription>
+              <CardTitle>Available Compounds</CardTitle>
+              <CardDescription>
+                {compounds.length > 0
+                  ? `${String(result?.pagination.total ?? compounds.length)} compounds available`
+                  : "Loading..."}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {commonMedications.map((med) => (
-                  <button
-                    key={med.name}
-                    className="w-full border border-neutral-200 p-3 text-left transition-colors hover:bg-neutral-50"
-                  >
-                    <p className="font-medium">{med.name}</p>
-                    <p className="text-sm text-neutral-500">
-                      {med.dosages.join(", ")}
-                    </p>
-                  </button>
-                ))}
+              <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                {compounds.length > 0 ? (
+                  compounds.map((compound) => (
+                    <button
+                      key={compound.id}
+                      className="w-full border border-neutral-200 p-3 text-left transition-colors hover:bg-neutral-50"
+                    >
+                      <p className="font-medium">{compound.name}</p>
+                      <p className="text-sm text-neutral-500">
+                        {formatDosageForm(compound.dosageForm)}
+                        {compound.strength && ` • ${compound.strength}`}
+                      </p>
+                    </button>
+                  ))
+                ) : (
+                  <p className="text-center py-4 text-neutral-500">
+                    No compounds available
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>

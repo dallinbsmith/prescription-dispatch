@@ -1,3 +1,5 @@
+export * from "./result";
+
 export const formatDate = (date: Date, locale = "en-US"): string => {
   return new Intl.DateTimeFormat(locale, {
     year: "numeric",
@@ -14,6 +16,22 @@ export const formatDateTime = (date: Date, locale = "en-US"): string => {
     hour: "numeric",
     minute: "2-digit",
   }).format(date);
+};
+
+export const formatTime = (date: Date, locale = "en-US"): string => {
+  return new Intl.DateTimeFormat(locale, {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+};
+
+export const formatDateForInput = (date: Date): string => {
+  const isoString = date.toISOString();
+  return isoString.slice(0, 10);
+};
+
+export const parseDate = (dateString: string): Date => {
+  return new Date(dateString);
 };
 
 export const formatPhone = (phone: string): string => {

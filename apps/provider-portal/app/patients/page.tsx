@@ -1,3 +1,4 @@
+
 import { Badge } from "@rx/ui/badge";
 import { Button } from "@rx/ui/button";
 import { Input } from "@rx/ui/input";
@@ -9,41 +10,61 @@ import {
   TableHeader,
   TableRow,
 } from "@rx/ui/table";
+import { cookies } from "next/headers";
+import Link from "next/link";
 
-const mockPatients = [
-  {
-    id: "P-001",
-    name: "John Smith",
-    dob: "1985-03-15",
-    lastVisit: "2024-02-01",
-    status: "active",
-    rxCount: 3,
-  },
-  {
-    id: "P-002",
-    name: "Sarah Wilson",
-    dob: "1990-07-22",
-    lastVisit: "2024-01-28",
-    status: "active",
-    rxCount: 2,
-  },
-  {
-    id: "P-003",
-    name: "Michael Brown",
-    dob: "1978-11-08",
-    lastVisit: "2024-01-15",
-    status: "follow-up",
-    rxCount: 4,
-  },
-  {
-    id: "P-004",
-    name: "Emily Davis",
-    dob: "1995-02-14",
-    lastVisit: "2023-12-20",
-    status: "inactive",
-    rxCount: 1,
-  },
-];
+interface Patient {
+  id: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  status: "active" | "follow-up" | "inactive";
+  activeRxCount: number;
+  lastVisit: string | null;
+}
+
+interface PatientsResponse {
+  data: Patient[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    hasMore: boolean;
+  };
+}
+
+const getPatients = async (): Promise<PatientsResponse | null> => {
+  try {
+    const cookieStore = await cookies();
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+    const response = await fetch(
+      `${baseUrl}/api/patients?pageSize=50`,
+      {
+        headers: {
+          Cookie: cookieStore.toString(),
+        },
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return await response.json() as PatientsResponse;
+  } catch {
+    return null;
+  }
+};
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
 
 const getStatusBadge = (status: string) => {
   const variants: Record<string, "success" | "warning" | "secondary"> = {
@@ -54,22 +75,24 @@ const getStatusBadge = (status: string) => {
   return <Badge variant={variants[status] ?? "secondary"}>{status}</Badge>;
 };
 
-const PatientsPage = () => {
+const PatientsPage = async () => {
+  const result = await getPatients();
+  const patients = result?.data ?? [];
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Patients</h1>
           <p className="mt-1 text-neutral-600">
-            Manage your patient panel
+            Manage your patient panel ({result?.pagination.total ?? 0} patients)
           </p>
         </div>
-        <Button>Add Patient</Button>
       </div>
 
       <div className="mb-6">
         <Input
-          placeholder="Search patients by name, DOB, or ID..."
+          placeholder="Search patients by name..."
           className="max-w-md"
         />
       </div>
@@ -78,7 +101,6 @@ const PatientsPage = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Patient ID</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Date of Birth</TableHead>
               <TableHead>Last Visit</TableHead>
@@ -88,26 +110,41 @@ const PatientsPage = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockPatients.map((patient) => (
-              <TableRow key={patient.id}>
-                <TableCell className="font-medium">{patient.id}</TableCell>
-                <TableCell>{patient.name}</TableCell>
-                <TableCell>{patient.dob}</TableCell>
-                <TableCell>{patient.lastVisit}</TableCell>
-                <TableCell>{getStatusBadge(patient.status)}</TableCell>
-                <TableCell>{patient.rxCount}</TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      Chart
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      Prescribe
-                    </Button>
-                  </div>
+            {patients.length > 0 ? (
+              patients.map((patient) => (
+                <TableRow key={patient.id}>
+                  <TableCell className="font-medium">
+                    {patient.firstName} {patient.lastName}
+                  </TableCell>
+                  <TableCell>{formatDate(patient.dateOfBirth)}</TableCell>
+                  <TableCell>
+                    {patient.lastVisit ? formatDate(patient.lastVisit) : "—"}
+                  </TableCell>
+                  <TableCell>{getStatusBadge(patient.status)}</TableCell>
+                  <TableCell>{patient.activeRxCount}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Link href={`/patients/${patient.id}`}>
+                        <Button variant="outline" size="sm">
+                          Chart
+                        </Button>
+                      </Link>
+                      <Link href={`/prescribe?patientId=${patient.id}`}>
+                        <Button variant="outline" size="sm">
+                          Prescribe
+                        </Button>
+                      </Link>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-neutral-500">
+                  No patients found
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>

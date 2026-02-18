@@ -1,3 +1,6 @@
+import Link from "next/link";
+
+import { Button } from "@rx/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@rx/ui/card";
 
 const stats = [
@@ -73,6 +76,11 @@ const DashboardPage = () => {
                 </div>
               </div>
             </div>
+            <Link href="/benefits" className="mt-4 block">
+              <Button variant="outline" className="w-full">
+                View All Benefits
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 
@@ -96,6 +104,11 @@ const DashboardPage = () => {
                 </div>
               ))}
             </div>
+            <Link href="/employees" className="mt-4 block">
+              <Button variant="outline" className="w-full">
+                View All Employees
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>

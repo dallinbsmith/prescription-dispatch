@@ -1,5 +1,5 @@
 {
-  "extends": "@rx/typescript-config/node-library.json",
+  "extends": "@rx/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src"

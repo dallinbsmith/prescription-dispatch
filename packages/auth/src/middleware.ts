@@ -5,12 +5,18 @@ import { auth0 } from "./auth0";
 import { ROLES_CLAIM } from "./types";
 
 export interface PortalMiddlewareConfig {
-  portalName: string;
-  allowedRoles: string[];
+  allowedRoles: readonly string[];
 }
 
+const decodeJwtPayload = (token: string): Record<string, unknown> => {
+  const parts = token.split(".");
+  if (parts.length !== 3 || !parts[1]) return {};
+  const decoded = Buffer.from(parts[1], "base64").toString("utf-8");
+  return JSON.parse(decoded);
+};
+
 export const createPortalMiddleware = (config: PortalMiddlewareConfig) => {
-  return async function middleware(request: NextRequest) {
+  return async (request: NextRequest) => {
     const authResponse = await auth0.middleware(request);
 
     const { pathname } = request.nextUrl;
@@ -31,7 +37,9 @@ export const createPortalMiddleware = (config: PortalMiddlewareConfig) => {
       return NextResponse.redirect(new URL("/auth/login", request.url));
     }
 
-    const userRoles: unknown = session.user[ROLES_CLAIM];
+    const idToken = session.tokenSet?.idToken;
+    const claims = idToken ? decodeJwtPayload(idToken) : {};
+    const userRoles = claims[ROLES_CLAIM];
     const roles = (Array.isArray(userRoles) ? userRoles : []) as string[];
     const hasAccess = roles.some((role: string) =>
       config.allowedRoles.includes(role)

@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
+import { Auth0Provider } from "@auth0/nextjs-auth0/client";
+
+import { SkipLink, Toaster } from "@rx/ui";
+
 import { Nav } from "@/components/nav";
 
 import "./globals.css";
@@ -19,8 +23,12 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen font-sans antialiased">
-        <Nav />
-        <main>{children}</main>
+        <Auth0Provider>
+          <SkipLink />
+          <Nav />
+          <main id="main-content">{children}</main>
+          <Toaster />
+        </Auth0Provider>
       </body>
     </html>
   );

@@ -1,3 +1,4 @@
+
 import { Badge } from "@rx/ui/badge";
 import { Button } from "@rx/ui/button";
 import {
@@ -8,68 +9,79 @@ import {
   TableHeader,
   TableRow,
 } from "@rx/ui/table";
+import { cookies } from "next/headers";
 
-const mockOrders = [
-  {
-    id: "ORD-2024-0156",
-    patient: "John Smith",
-    medication: "Testosterone Cypionate",
-    dosage: "200mg/mL",
-    quantity: 1,
-    priority: "normal",
-    received: "2024-02-10 09:15",
-    status: "pending",
-  },
-  {
-    id: "ORD-2024-0155",
-    patient: "Sarah Wilson",
-    medication: "Semaglutide",
-    dosage: "0.5mg",
-    quantity: 4,
-    priority: "rush",
-    received: "2024-02-10 08:45",
-    status: "pending",
-  },
-  {
-    id: "ORD-2024-0154",
-    patient: "Michael Brown",
-    medication: "BPC-157",
-    dosage: "5mg vial",
-    quantity: 2,
-    priority: "normal",
-    received: "2024-02-10 08:30",
-    status: "pending",
-  },
-  {
-    id: "ORD-2024-0153",
-    patient: "Emily Davis",
-    medication: "Sermorelin",
-    dosage: "9mg vial",
-    quantity: 1,
-    priority: "normal",
-    received: "2024-02-09 16:20",
-    status: "pending",
-  },
-  {
-    id: "ORD-2024-0152",
-    patient: "Robert Chen",
-    medication: "NAD+ Nasal Spray",
-    dosage: "100mg/mL",
-    quantity: 1,
-    priority: "normal",
-    received: "2024-02-09 15:00",
-    status: "pending",
-  },
-];
+interface Order {
+  id: string;
+  orderNumber: string;
+  status: string;
+  createdAt: string;
+  patient: {
+    id: string;
+    name: string;
+  };
+  medication: string;
+  dosage: string | null;
+  dosageForm: string;
+  quantity: number;
+}
 
-const QueuePage = () => {
+interface OrdersResponse {
+  data: Order[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    hasMore: boolean;
+  };
+}
+
+const getOrders = async (): Promise<OrdersResponse | null> => {
+  try {
+    const cookieStore = await cookies();
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+    const response = await fetch(
+      `${baseUrl}/api/orders?status=pending&pageSize=50&sortOrder=asc`,
+      {
+        headers: {
+          Cookie: cookieStore.toString(),
+        },
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as OrdersResponse;
+  } catch {
+    return null;
+  }
+};
+
+const formatDateTime = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
+const QueuePage = async () => {
+  const result = await getOrders();
+  const orders = result?.data ?? [];
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Order Queue</h1>
           <p className="mt-1 text-neutral-600">
-            {mockOrders.length} orders awaiting processing
+            {result?.pagination.total ?? 0} orders awaiting processing
           </p>
         </div>
         <div className="flex gap-2">
@@ -89,41 +101,49 @@ const QueuePage = () => {
               <TableHead>Patient</TableHead>
               <TableHead>Medication</TableHead>
               <TableHead>Qty</TableHead>
-              <TableHead>Priority</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Received</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockOrders.map((order) => (
-              <TableRow key={order.id}>
-                <TableCell>
-                  <input type="checkbox" className="border-neutral-300" />
-                </TableCell>
-                <TableCell className="font-medium">{order.id}</TableCell>
-                <TableCell>{order.patient}</TableCell>
-                <TableCell>
-                  <div>
-                    <p>{order.medication}</p>
-                    <p className="text-sm text-neutral-500">{order.dosage}</p>
-                  </div>
-                </TableCell>
-                <TableCell>{order.quantity}</TableCell>
-                <TableCell>
-                  {order.priority === "rush" ? (
-                    <Badge variant="error">Rush</Badge>
-                  ) : (
-                    <Badge variant="secondary">Normal</Badge>
-                  )}
-                </TableCell>
-                <TableCell className="text-sm text-neutral-500">
-                  {order.received}
-                </TableCell>
-                <TableCell>
-                  <Button size="sm">Start Processing</Button>
+            {orders.length > 0 ? (
+              orders.map((order) => (
+                <TableRow key={order.id}>
+                  <TableCell>
+                    <input type="checkbox" className="border-neutral-300" />
+                  </TableCell>
+                  <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                  <TableCell>{order.patient.name}</TableCell>
+                  <TableCell>
+                    <div>
+                      <p>{order.medication}</p>
+                      {order.dosage && (
+                        <p className="text-sm text-neutral-500">{order.dosage}</p>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>{order.quantity}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">
+                      {order.status === "pending" ? "Pending" : order.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-sm text-neutral-500">
+                    {formatDateTime(order.createdAt)}
+                  </TableCell>
+                  <TableCell>
+                    <Button size="sm">Start Processing</Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={8} className="py-8 text-center text-neutral-500">
+                  No orders in queue
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>

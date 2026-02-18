@@ -1,7 +1,13 @@
-import Link from "next/link";
+"use client";
 
-import { auth0 } from "@rx/auth";
-import { Button, cn } from "@rx/ui";
+import { Menu } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+
+import { useUser } from "@auth0/nextjs-auth0/client";
+
+import { Button, cn, Sheet, SheetContent, SheetTrigger } from "@rx/ui";
 
 const navItems = [
   { href: "/", label: "Dashboard" },
@@ -11,8 +17,36 @@ const navItems = [
   { href: "/settings", label: "Settings" },
 ];
 
-export const Nav = async () => {
-  const session = await auth0.getSession();
+export const Nav = () => {
+  const pathname = usePathname();
+  const { user, isLoading } = useUser();
+  const [open, setOpen] = useState(false);
+
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    return pathname.startsWith(href);
+  };
+
+  const NavLinks = ({ mobile = false }: { mobile?: boolean }) => (
+    <>
+      {navItems.map((item) => (
+        <Link
+          key={item.href}
+          href={item.href}
+          onClick={() => mobile && setOpen(false)}
+          className={cn(
+            "text-sm font-medium transition-colors hover:text-employer-600",
+            isActive(item.href)
+              ? "text-employer-600 font-semibold"
+              : "text-neutral-600",
+            mobile && "block py-2"
+          )}
+        >
+          {item.label}
+        </Link>
+      ))}
+    </>
+  );
 
   return (
     <header className="border-b border-neutral-200 bg-white">
@@ -21,26 +55,15 @@ export const Nav = async () => {
           Prescription Dispatch Employer
         </Link>
 
-        <nav className="flex items-center gap-6">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "text-sm font-medium transition-colors hover:text-employer-600",
-                "text-neutral-600"
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
+        <nav className="hidden items-center gap-6 md:flex">
+          <NavLinks />
         </nav>
 
         <div className="flex items-center gap-4">
-          {session?.user ? (
+          {isLoading ? null : user ? (
             <>
-              <span className="text-sm text-neutral-600">
-                {session.user.email}
+              <span className="hidden text-sm text-neutral-600 sm:block">
+                {user.email}
               </span>
               <a href="/auth/logout">
                 <Button variant="outline" size="sm">
@@ -53,6 +76,25 @@ export const Nav = async () => {
               <Button size="sm">Sign In</Button>
             </a>
           )}
+
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild className="md:hidden">
+              <Button variant="outline" size="sm">
+                <Menu className="h-4 w-4" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-64">
+              <nav className="mt-8 flex flex-col gap-2">
+                <NavLinks mobile />
+              </nav>
+              {user && (
+                <div className="mt-6 border-t pt-4">
+                  <p className="text-sm text-neutral-600">{user.email}</p>
+                </div>
+              )}
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>

@@ -1,48 +1,86 @@
+import { redirect } from "next/navigation";
+
+import { prisma } from "@rx/database";
+import { getSession } from "@rx/auth";
+import { getPatientIdFromAuth0Id } from "@rx/api-server";
 import { Badge } from "@rx/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@rx/ui/card";
+import { formatDate } from "@rx/utils";
 
-const mockOrders = [
-  {
-    id: "ORD-2024-0042",
-    medication: "Testosterone Cypionate 200mg/mL",
-    status: "shipped",
-    orderDate: "2024-02-05",
-    trackingNumber: "1Z999AA10123456784",
-    carrier: "UPS",
-    estimatedDelivery: "2024-02-08",
-  },
-  {
-    id: "ORD-2024-0041",
-    medication: "Semaglutide 0.5mg",
-    status: "processing",
-    orderDate: "2024-02-03",
-    trackingNumber: null,
-    carrier: null,
-    estimatedDelivery: null,
-  },
-  {
-    id: "ORD-2024-0038",
-    medication: "Sermorelin 9mg vial",
-    status: "delivered",
-    orderDate: "2024-01-25",
-    trackingNumber: "1Z999AA10123456780",
-    carrier: "UPS",
-    estimatedDelivery: null,
-    deliveredDate: "2024-01-28",
-  },
-];
+interface OrderWithRelations {
+  id: string;
+  orderNumber: string;
+  status: string;
+  trackingNumber: string | null;
+  shippingCarrier: string | null;
+  estimatedDelivery: Date | null;
+  createdAt: Date;
+  prescription: {
+    strength: string | null;
+    compound: {
+      name: string;
+      defaultStrength: string;
+    };
+  };
+  shippingAddress: {
+    street1: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  } | null;
+}
 
 const getStatusBadge = (status: string) => {
   const variants: Record<string, "default" | "success" | "warning" | "secondary"> = {
     delivered: "success",
     shipped: "default",
+    packaging: "default",
     processing: "warning",
+    compounding: "warning",
+    quality_check: "warning",
     pending: "secondary",
+    cancelled: "secondary",
   };
-  return <Badge variant={variants[status] ?? "secondary"}>{status}</Badge>;
+  return <Badge variant={variants[status] ?? "secondary"}>{status.replace("_", " ")}</Badge>;
 };
 
-const OrdersPage = () => {
+const OrdersPage = async () => {
+  const session = await getSession();
+
+  if (!session?.user) {
+    redirect("/api/auth/login");
+  }
+
+  const patientId = await getPatientIdFromAuth0Id(session.user.sub);
+
+  if (!patientId) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+          Patient profile not found. Please contact support.
+        </div>
+      </div>
+    );
+  }
+
+  const orders = await prisma.order.findMany({
+    where: { patientId },
+    include: {
+      prescription: {
+        include: {
+          compound: {
+            select: {
+              name: true,
+              defaultStrength: true,
+            },
+          },
+        },
+      },
+      shippingAddress: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -52,44 +90,53 @@ const OrdersPage = () => {
         </p>
       </div>
 
-      <div className="space-y-4">
-        {mockOrders.map((order) => (
-          <Card key={order.id}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-base font-medium">
-                {order.id}
-              </CardTitle>
-              {getStatusBadge(order.status)}
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div>
-                  <p className="text-sm text-neutral-500">Medication</p>
-                  <p className="font-medium">{order.medication}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-neutral-500">Order Date</p>
-                  <p className="font-medium">{order.orderDate}</p>
-                </div>
-                {order.trackingNumber && (
+      {orders.length === 0 ? (
+        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-8 text-center text-neutral-600">
+          You don't have any orders yet.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {orders.map((order: OrderWithRelations) => (
+            <Card key={order.id}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-base font-medium">
+                  {order.orderNumber}
+                </CardTitle>
+                {getStatusBadge(order.status)}
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <div>
-                    <p className="text-sm text-neutral-500">Tracking</p>
-                    <p className="font-medium text-patient-600">
-                      {order.carrier}: {order.trackingNumber}
+                    <p className="text-sm text-neutral-500">Medication</p>
+                    <p className="font-medium">
+                      {order.prescription.compound.name}{" "}
+                      {order.prescription.strength ?? order.prescription.compound.defaultStrength}
                     </p>
                   </div>
-                )}
-                {order.estimatedDelivery && (
                   <div>
-                    <p className="text-sm text-neutral-500">Est. Delivery</p>
-                    <p className="font-medium">{order.estimatedDelivery}</p>
+                    <p className="text-sm text-neutral-500">Order Date</p>
+                    <p className="font-medium">{formatDate(order.createdAt)}</p>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  {order.trackingNumber && (
+                    <div>
+                      <p className="text-sm text-neutral-500">Tracking</p>
+                      <p className="font-medium text-patient-600">
+                        {order.shippingCarrier}: {order.trackingNumber}
+                      </p>
+                    </div>
+                  )}
+                  {order.estimatedDelivery && (
+                    <div>
+                      <p className="text-sm text-neutral-500">Est. Delivery</p>
+                      <p className="font-medium">{formatDate(order.estimatedDelivery)}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

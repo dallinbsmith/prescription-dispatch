@@ -25,6 +25,14 @@
       "types": "./dist/dialog.d.ts",
       "import": "./dist/dialog.js"
     },
+    "./empty-state": {
+      "types": "./dist/empty-state.d.ts",
+      "import": "./dist/empty-state.js"
+    },
+    "./error-boundary": {
+      "types": "./dist/error-boundary.d.ts",
+      "import": "./dist/error-boundary.js"
+    },
     "./input": {
       "types": "./dist/input.d.ts",
       "import": "./dist/input.js"
@@ -37,6 +45,18 @@
       "types": "./dist/select.d.ts",
       "import": "./dist/select.js"
     },
+    "./sheet": {
+      "types": "./dist/sheet.d.ts",
+      "import": "./dist/sheet.js"
+    },
+    "./skeleton": {
+      "types": "./dist/skeleton.d.ts",
+      "import": "./dist/skeleton.js"
+    },
+    "./skip-link": {
+      "types": "./dist/skip-link.d.ts",
+      "import": "./dist/skip-link.js"
+    },
     "./table": {
       "types": "./dist/table.d.ts",
       "import": "./dist/table.js"
@@ -44,6 +64,14 @@
     "./toast": {
       "types": "./dist/toast.d.ts",
       "import": "./dist/toast.js"
+    },
+    "./toaster": {
+      "types": "./dist/toaster.d.ts",
+      "import": "./dist/toaster.js"
+    },
+    "./use-toast": {
+      "types": "./dist/use-toast.d.ts",
+      "import": "./dist/use-toast.js"
     }
   },
   "scripts": {

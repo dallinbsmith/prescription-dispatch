@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Button } from "@rx/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@rx/ui/card";
 
@@ -22,7 +24,9 @@ const HomePage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full">View Prescriptions</Button>
+            <Link href="/prescriptions">
+              <Button className="w-full">View Prescriptions</Button>
+            </Link>
           </CardContent>
         </Card>
 
@@ -34,23 +38,27 @@ const HomePage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="outline" className="w-full">
-              Track Orders
-            </Button>
+            <Link href="/orders">
+              <Button variant="outline" className="w-full">
+                Track Orders
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Schedule Consultation</CardTitle>
+            <CardTitle>My Profile</CardTitle>
             <CardDescription>
-              Connect with a healthcare provider
+              View and update your information
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="secondary" className="w-full">
-              Book Appointment
-            </Button>
+            <Link href="/profile">
+              <Button variant="secondary" className="w-full">
+                View Profile
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>
