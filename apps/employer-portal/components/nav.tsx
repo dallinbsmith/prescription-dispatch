@@ -1,10 +1,9 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-
+import { Menu } from "lucide-react";
 import { useUser } from "@auth0/nextjs-auth0/client";
 
 import { Button, cn, Sheet, SheetContent, SheetTrigger } from "@rx/ui";
@@ -65,14 +64,14 @@ export const Nav = () => {
               <span className="hidden text-sm text-neutral-600 sm:block">
                 {user.email}
               </span>
-              <a href="/auth/logout">
+              <a href="/api/auth/logout">
                 <Button variant="outline" size="sm">
                   Sign Out
                 </Button>
               </a>
             </>
           ) : (
-            <a href="/auth/login">
+            <a href="/api/auth/login">
               <Button size="sm">Sign In</Button>
             </a>
           )}

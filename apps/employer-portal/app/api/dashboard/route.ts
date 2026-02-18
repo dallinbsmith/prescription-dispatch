@@ -5,13 +5,15 @@ import {
   withAuth,
 } from "@rx/api-server";
 import { prisma } from "@rx/database";
+import type { DashboardRecentActivity } from "@rx/types";
 
-interface RecentActivity {
-  id: string;
-  employeeName: string;
-  action: string;
-  date: Date;
-}
+import {
+  ACTIVE_PRESCRIPTION_STATUSES,
+  AVG_SAVINGS_PER_RX,
+  RECENT_ORDERS_LIMIT,
+  TELEMEDICINE_ENROLLMENT_OFFSET,
+  WELLNESS_ENROLLMENT_OFFSET,
+} from "../constants";
 
 interface OrderWithPatient {
   id: string;
@@ -50,7 +52,7 @@ export const GET = withAuth(async ({ user }) => {
     prisma.prescription.count({
       where: {
         patient: { employerId },
-        status: { in: ["pending", "verified", "compounding", "quality_check", "ready"] },
+        status: { in: [...ACTIVE_PRESCRIPTION_STATUSES] },
       },
     }),
     prisma.order.findMany({
@@ -66,11 +68,11 @@ export const GET = withAuth(async ({ user }) => {
         },
       },
       orderBy: { createdAt: "desc" },
-      take: 5,
+      take: RECENT_ORDERS_LIMIT,
     }),
   ]);
 
-  const recentActivity: RecentActivity[] = recentOrders.map((order: OrderWithPatient) => ({
+  const recentActivity: DashboardRecentActivity[] = recentOrders.map((order: OrderWithPatient) => ({
     id: order.id,
     employeeName: `${order.patient.firstName} ${order.patient.lastName}`,
     action: getActionFromStatus(order.status),
@@ -91,8 +93,8 @@ export const GET = withAuth(async ({ user }) => {
     },
     enrollment: {
       prescriptionBenefits: enrollmentRate,
-      wellnessProgram: Math.max(0, enrollmentRate - 7),
-      telemedicine: Math.max(0, enrollmentRate - 24),
+      wellnessProgram: Math.max(0, enrollmentRate - WELLNESS_ENROLLMENT_OFFSET),
+      telemedicine: Math.max(0, enrollmentRate - TELEMEDICINE_ENROLLMENT_OFFSET),
     },
     recentActivity,
   });
@@ -113,7 +115,6 @@ const getActionFromStatus = (status: string): string => {
 };
 
 const calculateMonthlySavings = (activePrescriptions: number): string => {
-  const avgSavingsPerRx = 85;
-  const savings = activePrescriptions * avgSavingsPerRx;
+  const savings = activePrescriptions * AVG_SAVINGS_PER_RX;
   return `$${savings.toLocaleString()}`;
 };

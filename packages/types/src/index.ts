@@ -1,3 +1,5 @@
+export * from "./employer";
+
 export type Platform = "patient" | "doctor" | "pharmacy" | "employer";
 
 export type UserRole =
@@ -67,10 +69,14 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
+export interface PaginationMeta {
   page: number;
   pageSize: number;
+  total: number;
   hasMore: boolean;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationMeta;
 }

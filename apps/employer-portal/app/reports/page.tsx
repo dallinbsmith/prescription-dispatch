@@ -1,102 +1,137 @@
+import type { ReportsData } from "@rx/types";
 import { Button } from "@rx/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@rx/ui/card";
+import { EmptyState } from "@rx/ui/empty-state";
+import { BarChart3, FileText } from "lucide-react";
+import { cookies } from "next/headers";
 
-const reportTypes = [
-  {
-    id: "enrollment",
-    name: "Enrollment Report",
-    description: "Summary of employee enrollment across all benefit programs",
-    lastGenerated: "2024-02-09",
-  },
-  {
-    id: "utilization",
-    name: "Utilization Report",
-    description: "Program usage statistics and trends",
-    lastGenerated: "2024-02-08",
-  },
-  {
-    id: "cost",
-    name: "Cost Analysis",
-    description: "Detailed breakdown of benefit costs and savings",
-    lastGenerated: "2024-02-01",
-  },
-  {
-    id: "claims",
-    name: "Claims Summary",
-    description: "Overview of prescription claims and processing status",
-    lastGenerated: "2024-02-07",
-  },
-];
 
-const monthlySummary = [
-  { month: "Jan 2024", enrolled: 178, claims: 312, savings: 18500 },
-  { month: "Feb 2024", enrolled: 186, claims: 298, savings: 24500 },
-];
+interface ReportsResponse {
+  data: ReportsData;
+}
 
-const ReportsPage = () => {
+const getReportsData = async (): Promise<ReportsData | null> => {
+  try {
+    const cookieStore = await cookies();
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+    const response = await fetch(`${baseUrl}/api/reports`, {
+      headers: {
+        Cookie: cookieStore.toString(),
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const result = (await response.json()) as ReportsResponse;
+    return result.data;
+  } catch {
+    return null;
+  }
+};
+
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const ReportsPage = async () => {
+  const data = await getReportsData();
+  const reportTypes = data?.reportTypes ?? [];
+  const monthlySummary = data?.monthlySummary ?? [];
+  const totals = data?.totals;
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-neutral-900">Reports</h1>
         <p className="mt-1 text-neutral-600">
-          Generate and download benefit program reports
+          {totals
+            ? `${totals.totalClaims.toLocaleString()} claims processed · $${totals.totalSavings.toLocaleString()} total savings`
+            : "Generate and download benefit program reports"}
         </p>
       </div>
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {reportTypes.map((report) => (
-          <Card key={report.id}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">{report.name}</CardTitle>
-              <CardDescription className="text-xs">
-                {report.description}
-              </CardDescription>
-            </CardHeader>
+        {reportTypes.length > 0 ? (
+          reportTypes.map((report) => (
+            <Card key={report.id}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{report.name}</CardTitle>
+                <CardDescription className="text-xs">
+                  {report.description}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-3 text-xs text-neutral-500">
+                  Last generated: {report.lastGenerated ? formatDate(report.lastGenerated) : "Never"}
+                </p>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" className="flex-1">
+                    View
+                  </Button>
+                  <Button size="sm" className="flex-1">
+                    Generate
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <Card className="sm:col-span-2 lg:col-span-4">
             <CardContent>
-              <p className="mb-3 text-xs text-neutral-500">
-                Last generated: {report.lastGenerated}
-              </p>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="flex-1">
-                  View
-                </Button>
-                <Button size="sm" className="flex-1">
-                  Generate
-                </Button>
-              </div>
+              <EmptyState
+                icon={FileText}
+                title="No report types available"
+                description="Reports will appear here once your benefit programs are active."
+              />
             </CardContent>
           </Card>
-        ))}
+        )}
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Monthly Summary</CardTitle>
-          <CardDescription>Program performance over time</CardDescription>
+          <CardDescription>Program performance over the last 6 months</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-neutral-200">
-                  <th className="pb-3 text-left font-medium text-neutral-500">Month</th>
-                  <th className="pb-3 text-left font-medium text-neutral-500">Enrolled</th>
-                  <th className="pb-3 text-left font-medium text-neutral-500">Claims Processed</th>
-                  <th className="pb-3 text-left font-medium text-neutral-500">Est. Savings</th>
-                </tr>
-              </thead>
-              <tbody>
-                {monthlySummary.map((row) => (
-                  <tr key={row.month} className="border-b border-neutral-100">
-                    <td className="py-3 font-medium">{row.month}</td>
-                    <td className="py-3">{row.enrolled} employees</td>
-                    <td className="py-3">{row.claims} claims</td>
-                    <td className="py-3 text-success-600">${row.savings.toLocaleString()}</td>
+          {monthlySummary.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-200">
+                    <th className="pb-3 text-left font-medium text-neutral-500">Month</th>
+                    <th className="pb-3 text-left font-medium text-neutral-500">Enrolled</th>
+                    <th className="pb-3 text-left font-medium text-neutral-500">Claims Processed</th>
+                    <th className="pb-3 text-left font-medium text-neutral-500">Est. Savings</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {monthlySummary.map((row) => (
+                    <tr key={row.month} className="border-b border-neutral-100">
+                      <td className="py-3 font-medium">{row.month}</td>
+                      <td className="py-3">{row.enrolled} employees</td>
+                      <td className="py-3">{row.claims} claims</td>
+                      <td className="py-3 text-success-600">${row.savings.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <EmptyState
+              icon={BarChart3}
+              title="No data available"
+              description="Monthly summaries will appear here as employees start using their benefits."
+            />
+          )}
         </CardContent>
       </Card>
     </div>

@@ -1,10 +1,14 @@
 import {
+  apiBadRequest,
   apiPaginated,
   apiUnauthorized,
   getEmployerIdFromAuth0Id,
   withAuth,
 } from "@rx/api-server";
 import { prisma } from "@rx/database";
+import { employerEmployeeQuerySchema } from "@rx/schemas";
+
+import { ACTIVE_PRESCRIPTION_STATUSES, DEPARTMENTS } from "../constants";
 
 interface PatientWithUser {
   id: string;
@@ -32,8 +36,6 @@ interface Employee {
   activePrescriptions: number;
 }
 
-const DEPARTMENTS = ["Engineering", "Marketing", "Sales", "HR", "Finance", "Operations"];
-
 const getDepartment = (index: number): string => {
   return DEPARTMENTS[index % DEPARTMENTS.length] ?? "General";
 };
@@ -52,10 +54,18 @@ export const GET = withAuth(async ({ user, request }) => {
   }
 
   const { searchParams } = new URL(request.url);
-  const search = searchParams.get("search") ?? "";
-  const status = searchParams.get("status");
-  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
-  const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") ?? "20", 10)));
+  const queryResult = employerEmployeeQuerySchema.safeParse({
+    search: searchParams.get("search") ?? undefined,
+    status: searchParams.get("status") ?? undefined,
+    page: searchParams.get("page") ?? undefined,
+    pageSize: searchParams.get("pageSize") ?? undefined,
+  });
+
+  if (!queryResult.success) {
+    return apiBadRequest("Invalid query parameters");
+  }
+
+  const { search = "", status, page, pageSize } = queryResult.data;
 
   const where = {
     employerId,
@@ -91,11 +101,9 @@ export const GET = withAuth(async ({ user, request }) => {
     prisma.patient.count({ where }),
   ]);
 
-  const activeStatuses = ["pending", "verified", "compounding", "quality_check", "ready"];
-
   let employees = patients.map((patient: PatientWithUser, index: number) => {
     const activePrescriptions = patient.prescriptions.filter(
-      (rx) => activeStatuses.includes(rx.status)
+      (rx) => ACTIVE_PRESCRIPTION_STATUSES.includes(rx.status as typeof ACTIVE_PRESCRIPTION_STATUSES[number])
     ).length;
 
     const enrollmentStatus = getEnrollmentStatus(

@@ -239,6 +239,48 @@ export const employeeQuerySchema = paginationQuerySchema.extend({
   enrolled: z.coerce.boolean().optional(),
 });
 
+export const employeeEnrollmentStatusSchema = z.enum([
+  "enrolled",
+  "pending",
+  "not_enrolled",
+]);
+
+export const employerEmployeeQuerySchema = paginationQuerySchema.extend({
+  search: z.string().optional(),
+  status: employeeEnrollmentStatusSchema.optional(),
+});
+
+export const employeeIdParamSchema = z.object({
+  id: z.string().cuid(),
+});
+
+export const employerCompanyUpdateSchema = z.object({
+  name: z.string().min(1).max(200),
+  taxId: z.string().regex(/^\d{2}-\d{7}$/).optional().or(z.literal("")),
+  industry: z.string().max(100).optional().or(z.literal("")),
+  size: z.string().max(50).optional().or(z.literal("")),
+});
+
+export const employerContactUpdateSchema = z.object({
+  firstName: z.string().min(1).max(100),
+  lastName: z.string().min(1).max(100),
+  email: z.string().email(),
+  phone: z.string().regex(/^\(\d{3}\) \d{3}-\d{4}$/).optional().or(z.literal("")),
+});
+
+export const employerBillingAddressUpdateSchema = z.object({
+  street: z.string().min(1).max(200),
+  city: z.string().min(1).max(100),
+  state: z.string().length(2),
+  zip: z.string().regex(/^\d{5}(-\d{4})?$/),
+});
+
+export const employerNotificationsUpdateSchema = z.object({
+  enrollmentUpdates: z.boolean(),
+  monthlyReports: z.boolean(),
+  billingAlerts: z.boolean(),
+});
+
 export const patientStatusSchema = z.enum(["active", "follow-up", "inactive"]);
 
 export const patientSearchQuerySchema = paginationQuerySchema.extend({
@@ -296,9 +338,16 @@ export type AppointmentUpdate = z.infer<typeof appointmentUpdateSchema>;
 export type CompoundQuery = z.infer<typeof compoundQuerySchema>;
 export type CompoundUpdate = z.infer<typeof compoundUpdateSchema>;
 export type EmployeeQuery = z.infer<typeof employeeQuerySchema>;
+export type EmployeeEnrollmentStatus = z.infer<typeof employeeEnrollmentStatusSchema>;
+export type EmployerEmployeeQuery = z.infer<typeof employerEmployeeQuerySchema>;
+export type EmployeeIdParam = z.infer<typeof employeeIdParamSchema>;
 export type PatientStatus = z.infer<typeof patientStatusSchema>;
 export type PatientSearchQuery = z.infer<typeof patientSearchQuerySchema>;
 export type ProviderAppointmentQuery = z.infer<typeof providerAppointmentQuerySchema>;
 export type ProviderPrescriptionQuery = z.infer<typeof providerPrescriptionQuerySchema>;
 export type VisitNotesUpdate = z.infer<typeof visitNotesUpdateSchema>;
 export type StartVisit = z.infer<typeof startVisitSchema>;
+export type EmployerCompanyUpdate = z.infer<typeof employerCompanyUpdateSchema>;
+export type EmployerContactUpdate = z.infer<typeof employerContactUpdateSchema>;
+export type EmployerBillingAddressUpdate = z.infer<typeof employerBillingAddressUpdateSchema>;
+export type EmployerNotificationsUpdate = z.infer<typeof employerNotificationsUpdateSchema>;

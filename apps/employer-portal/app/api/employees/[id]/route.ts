@@ -1,11 +1,19 @@
 import {
+  apiBadRequest,
+  apiNotFound,
   apiSuccess,
   apiUnauthorized,
   getEmployerIdFromAuth0Id,
   withAuth,
 } from "@rx/api-server";
 import { prisma } from "@rx/database";
-import { NextResponse } from "next/server";
+import { employeeIdParamSchema } from "@rx/schemas";
+
+import {
+  ACTIVE_PRESCRIPTION_STATUSES,
+  RECENT_ORDERS_LIMIT,
+  RECENT_PRESCRIPTIONS_LIMIT,
+} from "../../constants";
 
 interface PrescriptionWithCompound {
   id: string;
@@ -25,7 +33,13 @@ export const GET = withAuth(async ({ user, params }) => {
     return apiUnauthorized("Employer admin profile not found");
   }
 
-  const { id } = await params;
+  const paramResult = employeeIdParamSchema.safeParse(params);
+
+  if (!paramResult.success) {
+    return apiBadRequest("Invalid employee ID");
+  }
+
+  const { id } = paramResult.data;
 
   const patient = await prisma.patient.findUnique({
     where: { id },
@@ -50,7 +64,7 @@ export const GET = withAuth(async ({ user, params }) => {
           },
         },
         orderBy: { prescribedAt: "desc" },
-        take: 10,
+        take: RECENT_PRESCRIPTIONS_LIMIT,
       },
       orders: {
         select: {
@@ -61,21 +75,17 @@ export const GET = withAuth(async ({ user, params }) => {
           createdAt: true,
         },
         orderBy: { createdAt: "desc" },
-        take: 5,
+        take: RECENT_ORDERS_LIMIT,
       },
     },
   });
 
-  if (!patient || patient.employerId !== employerId) {
-    return NextResponse.json(
-      { error: { code: "NOT_FOUND", message: "Employee not found" } },
-      { status: 404 }
-    );
+  if (patient?.employerId !== employerId) {
+    return apiNotFound("Employee");
   }
 
-  const activeStatuses = ["pending", "verified", "compounding", "quality_check", "ready"];
   const activePrescriptions = patient.prescriptions.filter(
-    (rx: PrescriptionWithCompound) => activeStatuses.includes(rx.status)
+    (rx: PrescriptionWithCompound) => ACTIVE_PRESCRIPTION_STATUSES.includes(rx.status as typeof ACTIVE_PRESCRIPTION_STATUSES[number])
   ).length;
 
   const enrollmentStatus = activePrescriptions > 0

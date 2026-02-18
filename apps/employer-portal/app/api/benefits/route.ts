@@ -6,16 +6,27 @@ import {
 } from "@rx/api-server";
 import { prisma } from "@rx/database";
 
+import { FALLBACK_TELEMEDICINE_RATE, FALLBACK_WELLNESS_RATE } from "../constants";
+
 interface BenefitPlan {
   id: string;
   name: string;
   description: string;
   enrolled: number;
   eligible: number;
+  monthlyRateAmount: number;
   monthlyRate: string;
   status: "active" | "inactive";
   features: string[];
 }
+
+const PLAN_RATES = {
+  wellness: 45,
+  prescription: 65,
+  telemedicine: 25,
+} as const;
+
+const formatRate = (amount: number): string => `$${String(amount)}/employee`;
 
 export const GET = withAuth(async ({ user }) => {
   const employerId = await getEmployerIdFromAuth0Id(user.sub);
@@ -46,8 +57,9 @@ export const GET = withAuth(async ({ user }) => {
     }),
   ]);
 
-  const wellnessEnrolled = Math.round(totalEmployees * 0.75);
-  const telemedicineEnrolled = employeesWithAppointments || Math.round(totalEmployees * 0.58);
+  const wellnessEnrolled = Math.round(totalEmployees * FALLBACK_WELLNESS_RATE);
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- 0 appointments should use fallback rate
+  const telemedicineEnrolled = employeesWithAppointments || Math.round(totalEmployees * FALLBACK_TELEMEDICINE_RATE);
 
   const benefitPlans: BenefitPlan[] = [
     {
@@ -56,7 +68,8 @@ export const GET = withAuth(async ({ user }) => {
       description: "Comprehensive wellness services including health screenings and preventive care",
       enrolled: wellnessEnrolled,
       eligible: totalEmployees,
-      monthlyRate: "$45/employee",
+      monthlyRateAmount: PLAN_RATES.wellness,
+      monthlyRate: formatRate(PLAN_RATES.wellness),
       status: "active",
       features: [
         "Annual health screenings",
@@ -70,7 +83,8 @@ export const GET = withAuth(async ({ user }) => {
       description: "Compounded medications at reduced rates through our pharmacy network",
       enrolled: employeesWithPrescriptions,
       eligible: totalEmployees,
-      monthlyRate: "$65/employee",
+      monthlyRateAmount: PLAN_RATES.prescription,
+      monthlyRate: formatRate(PLAN_RATES.prescription),
       status: "active",
       features: [
         "Discounted compound medications",
@@ -84,7 +98,8 @@ export const GET = withAuth(async ({ user }) => {
       description: "24/7 access to licensed healthcare providers via video consultation",
       enrolled: telemedicineEnrolled,
       eligible: totalEmployees,
-      monthlyRate: "$25/employee",
+      monthlyRateAmount: PLAN_RATES.telemedicine,
+      monthlyRate: formatRate(PLAN_RATES.telemedicine),
       status: "active",
       features: [
         "Unlimited video visits",
@@ -94,10 +109,10 @@ export const GET = withAuth(async ({ user }) => {
     },
   ];
 
-  const totalMonthlySpend = benefitPlans.reduce((sum, plan) => {
-    const rate = parseInt(plan.monthlyRate.replace(/\D/g, ""), 10);
-    return sum + plan.enrolled * rate;
-  }, 0);
+  const totalMonthlySpend = benefitPlans.reduce(
+    (sum, plan) => sum + plan.enrolled * plan.monthlyRateAmount,
+    0
+  );
 
   return apiSuccess({
     plans: benefitPlans,

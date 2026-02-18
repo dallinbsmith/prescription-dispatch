@@ -1,7 +1,7 @@
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@rx/ui";
 import { ShieldAlert } from "lucide-react";
 import Link from "next/link";
 
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@rx/ui";
 
 const UnauthorizedPage = () => {
   return (

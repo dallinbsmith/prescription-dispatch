@@ -1,6 +1,7 @@
+import type { Employee, PaginatedResponse } from "@rx/types";
 import { Badge } from "@rx/ui/badge";
 import { Button } from "@rx/ui/button";
-import { Input } from "@rx/ui/input";
+import { EmptyState } from "@rx/ui/empty-state";
 import {
   Table,
   TableBody,
@@ -9,54 +10,65 @@ import {
   TableHeader,
   TableRow,
 } from "@rx/ui/table";
+import { Users } from "lucide-react";
+import { cookies } from "next/headers";
 
-const mockEmployees = [
-  {
-    id: "EMP-001",
-    name: "John Smith",
-    email: "john.smith@acme.com",
-    department: "Engineering",
-    enrollmentStatus: "enrolled",
-    hireDate: "2022-03-15",
-    activePrescriptions: 2,
-  },
-  {
-    id: "EMP-002",
-    name: "Sarah Wilson",
-    email: "sarah.wilson@acme.com",
-    department: "Marketing",
-    enrollmentStatus: "enrolled",
-    hireDate: "2021-08-01",
-    activePrescriptions: 1,
-  },
-  {
-    id: "EMP-003",
-    name: "Michael Brown",
-    email: "michael.brown@acme.com",
-    department: "Sales",
-    enrollmentStatus: "pending",
-    hireDate: "2024-01-10",
-    activePrescriptions: 0,
-  },
-  {
-    id: "EMP-004",
-    name: "Emily Davis",
-    email: "emily.davis@acme.com",
-    department: "HR",
-    enrollmentStatus: "enrolled",
-    hireDate: "2020-11-20",
-    activePrescriptions: 3,
-  },
-  {
-    id: "EMP-005",
-    name: "Robert Chen",
-    email: "robert.chen@acme.com",
-    department: "Engineering",
-    enrollmentStatus: "not_enrolled",
-    hireDate: "2023-06-01",
-    activePrescriptions: 0,
-  },
-];
+import { EmployeeFilters } from "./employee-filters";
+
+
+type EmployeesResponse = PaginatedResponse<Employee>;
+
+interface SearchParams {
+  search?: string;
+  status?: string;
+  department?: string;
+  page?: string;
+}
+
+const getEmployees = async (searchParams: SearchParams): Promise<EmployeesResponse | null> => {
+  try {
+    const cookieStore = await cookies();
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+
+    const params = new URLSearchParams({ pageSize: "50" });
+    if (searchParams.search) params.set("search", searchParams.search);
+    if (searchParams.status) params.set("status", searchParams.status);
+    if (searchParams.page) params.set("page", searchParams.page);
+
+    const response = await fetch(`${baseUrl}/api/employees?${params.toString()}`, {
+      headers: {
+        Cookie: cookieStore.toString(),
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const result = (await response.json()) as EmployeesResponse;
+
+    if (searchParams.department) {
+      return {
+        ...result,
+        data: result.data.filter((emp) => emp.department === searchParams.department),
+      };
+    }
+
+    return result;
+  } catch {
+    return null;
+  }
+};
+
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
 
 const getStatusBadge = (status: string) => {
   const config: Record<string, { label: string; variant: "success" | "warning" | "secondary" }> = {
@@ -68,14 +80,25 @@ const getStatusBadge = (status: string) => {
   return <Badge variant={variant}>{label}</Badge>;
 };
 
-const EmployeesPage = () => {
+interface EmployeesPageProps {
+  searchParams: Promise<SearchParams>;
+}
+
+const EmployeesPage = async ({ searchParams }: EmployeesPageProps) => {
+  const params = await searchParams;
+  const result = await getEmployees(params);
+  const employees = result?.data ?? [];
+  const totalCount = result?.pagination.total ?? 0;
+
+  const hasFilters = Boolean(params.search ?? params.status ?? params.department);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Employees</h1>
           <p className="mt-1 text-neutral-600">
-            Manage employee benefits enrollment
+            {totalCount} employee{totalCount !== 1 ? "s" : ""} in benefits program
           </p>
         </div>
         <div className="flex gap-2">
@@ -84,15 +107,9 @@ const EmployeesPage = () => {
         </div>
       </div>
 
-      <div className="mb-6 flex gap-4">
-        <Input
-          placeholder="Search employees..."
-          className="max-w-md"
-        />
-        <Button variant="outline">Filter by Department</Button>
-      </div>
+      <EmployeeFilters />
 
-      <div className="border border-neutral-200 bg-white">
+      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
         <Table>
           <TableHeader>
             <TableRow>
@@ -105,30 +122,49 @@ const EmployeesPage = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockEmployees.map((employee) => (
-              <TableRow key={employee.id}>
-                <TableCell>
-                  <div>
-                    <p className="font-medium">{employee.name}</p>
-                    <p className="text-sm text-neutral-500">{employee.email}</p>
-                  </div>
-                </TableCell>
-                <TableCell>{employee.department}</TableCell>
-                <TableCell>{getStatusBadge(employee.enrollmentStatus)}</TableCell>
-                <TableCell className="text-neutral-500">{employee.hireDate}</TableCell>
-                <TableCell>{employee.activePrescriptions}</TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      View
-                    </Button>
-                    {employee.enrollmentStatus === "not_enrolled" && (
-                      <Button size="sm">Send Invite</Button>
-                    )}
-                  </div>
+            {employees.length > 0 ? (
+              employees.map((employee) => (
+                <TableRow key={employee.id}>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">{employee.name}</p>
+                      <p className="text-sm text-neutral-500">{employee.email}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>{employee.department}</TableCell>
+                  <TableCell>{getStatusBadge(employee.enrollmentStatus)}</TableCell>
+                  <TableCell className="text-neutral-500">
+                    {formatDate(employee.hireDate)}
+                  </TableCell>
+                  <TableCell>{employee.activePrescriptions}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        View
+                      </Button>
+                      {employee.enrollmentStatus === "not_enrolled" && (
+                        <Button size="sm">Send Invite</Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className="py-0">
+                  <EmptyState
+                    icon={Users}
+                    title={hasFilters ? "No employees match your filters" : "No employees found"}
+                    description={
+                      hasFilters
+                        ? "Try adjusting your search or filter criteria."
+                        : "Get started by inviting employees to your benefits program."
+                    }
+                    action={hasFilters ? undefined : <Button>Invite Employees</Button>}
+                  />
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>
