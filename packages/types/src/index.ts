@@ -9,8 +9,7 @@ export type UserRole =
   | "pharmacist"
   | "technician"
   | "hr_admin"
-  | "system_admin"
-  | "developer";
+  | "system_admin";
 
 export interface User {
   id: string;

@@ -57,6 +57,7 @@ export const GET = withAuth(async ({ user, request }) => {
   const queryResult = employerEmployeeQuerySchema.safeParse({
     search: searchParams.get("search") ?? undefined,
     status: searchParams.get("status") ?? undefined,
+    department: searchParams.get("department") ?? undefined,
     page: searchParams.get("page") ?? undefined,
     pageSize: searchParams.get("pageSize") ?? undefined,
   });
@@ -65,7 +66,7 @@ export const GET = withAuth(async ({ user, request }) => {
     return apiBadRequest("Invalid query parameters");
   }
 
-  const { search = "", status, page, pageSize } = queryResult.data;
+  const { search = "", status, department, page, pageSize } = queryResult.data;
 
   const where = {
     employerId,
@@ -124,6 +125,10 @@ export const GET = withAuth(async ({ user, request }) => {
 
   if (status) {
     employees = employees.filter((emp: Employee) => emp.enrollmentStatus === status);
+  }
+
+  if (department) {
+    employees = employees.filter((emp: Employee) => emp.department === department);
   }
 
   return apiPaginated(employees, {

@@ -17,6 +17,7 @@
     "@rx/api-server": "workspace:*",
     "@rx/auth": "workspace:*",
     "@rx/database": "workspace:*",
+    "@rx/hooks": "workspace:*",
     "@rx/schemas": "workspace:*",
     "@rx/types": "workspace:*",
     "@rx/ui": "workspace:*",

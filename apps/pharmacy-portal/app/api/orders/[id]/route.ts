@@ -39,6 +39,13 @@ export const GET = withAuth(async ({ user, params }) => {
 
   const { id } = await params;
 
+  if (!id) {
+    return NextResponse.json(
+      { error: { code: "BAD_REQUEST", message: "Order ID is required" } },
+      { status: 400 }
+    );
+  }
+
   const order = await prisma.order.findUnique({
     where: { id },
     include: {
@@ -137,6 +144,14 @@ export const PATCH = withAuth(async ({ user, params, request }) => {
   }
 
   const { id } = await params;
+
+  if (!id) {
+    return NextResponse.json(
+      { error: { code: "BAD_REQUEST", message: "Order ID is required" } },
+      { status: 400 }
+    );
+  }
+
   const body = await request.json();
   const { status, note, trackingNumber, carrier } = body as {
     status?: OrderStatus;

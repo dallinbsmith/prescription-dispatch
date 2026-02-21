@@ -285,8 +285,16 @@ model ProviderSpecialty {
 model Employer {
   id          String   @id @default(cuid())
   companyName String   @map("company_name")
+  taxId       String?  @map("tax_id")
+  industry    String?
+  size        String?
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+
+  billingStreet String? @map("billing_street")
+  billingCity   String? @map("billing_city")
+  billingState  String? @map("billing_state")
+  billingZip    String? @map("billing_zip")
 
   admins    EmployerAdmin[]
   employees Patient[]
@@ -298,7 +306,14 @@ model EmployerAdmin {
   id         String   @id @default(cuid())
   userId     String   @unique @map("user_id")
   employerId String   @map("employer_id")
+  firstName  String?  @map("first_name")
+  lastName   String?  @map("last_name")
   createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  enrollmentUpdates Boolean @default(true) @map("enrollment_updates")
+  monthlyReports    Boolean @default(true) @map("monthly_reports")
+  billingAlerts     Boolean @default(true) @map("billing_alerts")
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   employer Employer @relation(fields: [employerId], references: [id], onDelete: Cascade)

@@ -1,10 +1,18 @@
-import type { DashboardData } from "@rx/types";
-import { Button } from "@rx/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@rx/ui/card";
-import { EmptyState } from "@rx/ui/empty-state";
-import { Activity } from "lucide-react";
 import { cookies } from "next/headers";
 import Link from "next/link";
+
+import { Activity } from "lucide-react";
+
+import type { DashboardData } from "@rx/types";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  EmptyState,
+} from "@rx/ui";
 
 
 interface DashboardResponse {

@@ -1,8 +1,10 @@
 "use client";
 
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@rx/ui";
-import { AlertTriangle } from "lucide-react";
 import { useEffect } from "react";
+
+import { AlertTriangle } from "lucide-react";
+
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@rx/ui";
 
 
 interface ErrorPageProps {

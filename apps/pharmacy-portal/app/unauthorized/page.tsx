@@ -2,13 +2,12 @@ import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } fro
 import { ShieldAlert } from "lucide-react";
 import Link from "next/link";
 
-
 const UnauthorizedPage = () => {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-4">
       <Card className="max-w-md text-center">
         <CardHeader>
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center bg-red-100 text-red-600">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-600">
             <ShieldAlert className="h-8 w-8" />
           </div>
           <CardTitle className="text-xl">Access Denied</CardTitle>
@@ -17,7 +16,7 @@ const UnauthorizedPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="border border-neutral-200 bg-neutral-50 p-4 text-left text-sm">
+          <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-left text-sm">
             <p className="font-medium text-neutral-900">This portal is for:</p>
             <ul className="mt-2 list-inside list-disc text-neutral-600">
               <li>Pharmacists</li>

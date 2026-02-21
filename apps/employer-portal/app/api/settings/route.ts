@@ -52,26 +52,26 @@ export const GET = withAuth(async ({ user }) => {
     company: {
       id: employerAdmin.employer.id,
       name: employerAdmin.employer.companyName,
-      taxId: null,
-      industry: null,
-      size: null,
+      taxId: employerAdmin.employer.taxId,
+      industry: employerAdmin.employer.industry,
+      size: employerAdmin.employer.size,
     },
     contact: {
-      firstName: null,
-      lastName: null,
+      firstName: employerAdmin.firstName,
+      lastName: employerAdmin.lastName,
       email: adminUser?.email ?? "",
       phone: adminUser?.phone ?? null,
     },
     billingAddress: {
-      street: null,
-      city: null,
-      state: null,
-      zip: null,
+      street: employerAdmin.employer.billingStreet,
+      city: employerAdmin.employer.billingCity,
+      state: employerAdmin.employer.billingState,
+      zip: employerAdmin.employer.billingZip,
     },
     notifications: {
-      enrollmentUpdates: true,
-      monthlyReports: true,
-      billingAlerts: true,
+      enrollmentUpdates: employerAdmin.enrollmentUpdates,
+      monthlyReports: employerAdmin.monthlyReports,
+      billingAlerts: employerAdmin.billingAlerts,
     },
   };
 

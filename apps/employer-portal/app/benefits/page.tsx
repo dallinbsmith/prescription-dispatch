@@ -1,10 +1,18 @@
-import type { BenefitsData } from "@rx/types";
-import { Badge } from "@rx/ui/badge";
-import { Button } from "@rx/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@rx/ui/card";
-import { EmptyState } from "@rx/ui/empty-state";
-import { Gift } from "lucide-react";
 import { cookies } from "next/headers";
+
+import { Gift } from "lucide-react";
+
+import type { BenefitsData } from "@rx/types";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  EmptyState,
+} from "@rx/ui";
 
 
 interface BenefitsResponse {

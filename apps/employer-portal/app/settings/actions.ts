@@ -45,6 +45,9 @@ export const updateCompanyInfo = async (formData: FormData): Promise<ActionResul
     where: { id: admin.employerId },
     data: {
       companyName: result.data.name,
+      taxId: result.data.taxId || null,
+      industry: result.data.industry || null,
+      size: result.data.size || null,
     },
   });
 
@@ -69,13 +72,22 @@ export const updateContact = async (formData: FormData): Promise<ActionResult> =
     return { success: false, error: result.error.issues[0]?.message ?? "Invalid data" };
   }
 
-  await prisma.user.update({
-    where: { id: admin.userId },
-    data: {
-      email: result.data.email,
-      phone: result.data.phone ?? null,
-    },
-  });
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: admin.userId },
+      data: {
+        email: result.data.email,
+        phone: result.data.phone || null,
+      },
+    }),
+    prisma.employerAdmin.update({
+      where: { id: admin.id },
+      data: {
+        firstName: result.data.firstName,
+        lastName: result.data.lastName,
+      },
+    }),
+  ]);
 
   revalidatePath("/settings");
   return { success: true };
@@ -98,6 +110,16 @@ export const updateBillingAddress = async (formData: FormData): Promise<ActionRe
     return { success: false, error: result.error.issues[0]?.message ?? "Invalid data" };
   }
 
+  await prisma.employer.update({
+    where: { id: admin.employerId },
+    data: {
+      billingStreet: result.data.street,
+      billingCity: result.data.city,
+      billingState: result.data.state,
+      billingZip: result.data.zip,
+    },
+  });
+
   revalidatePath("/settings");
   return { success: true };
 };
@@ -117,6 +139,15 @@ export const updateNotifications = async (formData: FormData): Promise<ActionRes
   if (!result.success) {
     return { success: false, error: result.error.issues[0]?.message ?? "Invalid data" };
   }
+
+  await prisma.employerAdmin.update({
+    where: { id: admin.id },
+    data: {
+      enrollmentUpdates: result.data.enrollmentUpdates,
+      monthlyReports: result.data.monthlyReports,
+      billingAlerts: result.data.billingAlerts,
+    },
+  });
 
   revalidatePath("/settings");
   return { success: true };

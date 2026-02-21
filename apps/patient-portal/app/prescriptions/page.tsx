@@ -16,17 +16,16 @@ import { formatDate } from "@rx/utils";
 
 interface PrescriptionWithRelations {
   id: string;
-  rxNumber: string;
   status: string;
-  strength: string | null;
-  refillsRemaining: number;
+  refills: number;
+  refillsUsed: number;
   prescribedAt: Date;
   compound: {
     id: string;
     name: string;
     genericName: string | null;
     dosageForm: string;
-    defaultStrength: string;
+    defaultStrength: string | null;
   };
   provider: {
     id: string;
@@ -53,7 +52,7 @@ const PrescriptionsPage = async () => {
   const session = await getSession();
 
   if (!session?.user) {
-    redirect("/api/auth/login");
+    redirect("/auth/login");
   }
 
   const patientId = await getPatientIdFromAuth0Id(session.user.sub);
@@ -119,13 +118,13 @@ const PrescriptionsPage = async () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {prescriptions.map((rx: PrescriptionWithRelations) => (
+              {prescriptions.map((rx) => (
                 <TableRow key={rx.id}>
-                  <TableCell className="font-medium">{rx.rxNumber}</TableCell>
+                  <TableCell className="font-medium">{rx.id.slice(-8).toUpperCase()}</TableCell>
                   <TableCell>{rx.compound.name}</TableCell>
-                  <TableCell>{rx.strength ?? rx.compound.defaultStrength}</TableCell>
+                  <TableCell>{rx.compound.defaultStrength ?? "—"}</TableCell>
                   <TableCell>{getStatusBadge(rx.status)}</TableCell>
-                  <TableCell>{rx.refillsRemaining}</TableCell>
+                  <TableCell>{rx.refills - rx.refillsUsed}</TableCell>
                   <TableCell>{formatDate(rx.prescribedAt)}</TableCell>
                   <TableCell>
                     Dr. {rx.provider.lastName}

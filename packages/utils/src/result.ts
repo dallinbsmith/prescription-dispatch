@@ -22,7 +22,10 @@ export const unwrap = <T, E>(result: Result<T, E>): T => {
   if (result.success) {
     return result.data;
   }
-  throw result.error;
+  if (result.error instanceof Error) {
+    throw result.error;
+  }
+  throw new Error(String(result.error));
 };
 
 export const unwrapOr = <T, E>(result: Result<T, E>, defaultValue: T): T => {
@@ -54,7 +57,7 @@ export const mapErr = <T, E, F>(
 
 export const fromPromise = async <T>(
   promise: Promise<T>
-): Promise<Result<T, Error>> => {
+): Promise<Result<T>> => {
   try {
     const data = await promise;
     return ok(data);

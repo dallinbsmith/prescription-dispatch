@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
-
-import { getSession, getRolesFromUser, getPrimaryRole, type Auth0User } from "@rx/auth";
+import type { Auth0User } from "@rx/auth";
+import { getSession, getRolesFromUser, getPrimaryRole } from "@rx/auth";
 import type { UserRole } from "@rx/types";
+import type { NextRequest } from "next/server";
+import type { NextResponse } from "next/server";
 
-import { apiUnauthorized, apiForbidden, type ApiErrorResponse } from "./response";
+import { apiUnauthorized, apiForbidden } from "./response";
 
 export interface AuthenticatedUser {
   sub: string;

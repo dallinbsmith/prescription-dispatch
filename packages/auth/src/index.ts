@@ -55,9 +55,6 @@ export const PERMISSIONS: Record<UserRole, Permission[]> = {
   system_admin: [
     { action: "*", resource: "*" },
   ],
-  developer: [
-    { action: "*", resource: "*" },
-  ],
 };
 
 export const hasPermission = (
@@ -86,7 +83,6 @@ export const getPlatformForRole = (role: UserRole): Platform => {
     case "hr_admin":
       return "employer";
     case "system_admin":
-    case "developer":
       return "pharmacy";
     default: {
       const _exhaustiveCheck: never = role;
@@ -96,8 +92,8 @@ export const getPlatformForRole = (role: UserRole): Platform => {
 };
 
 export const PORTAL_ROLES = {
-  patient: ["patient", "caregiver", "developer"],
-  provider: ["prescriber", "developer"],
-  pharmacy: ["pharmacist", "technician", "system_admin", "developer"],
-  employer: ["hr_admin", "developer"],
+  patient: ["patient", "caregiver"],
+  provider: ["prescriber"],
+  pharmacy: ["pharmacist", "technician", "system_admin"],
+  employer: ["hr_admin"],
 } as const;

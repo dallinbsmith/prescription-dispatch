@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useUser } from "@auth0/nextjs-auth0/client";
+import { Button, cn, Sheet, SheetContent, SheetTrigger } from "@rx/ui";
+import { Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
-import { useUser } from "@auth0/nextjs-auth0/client";
-
-import { Button, cn, Sheet, SheetContent, SheetTrigger } from "@rx/ui";
+import { useState } from "react";
 
 const navItems = [
   { href: "/", label: "Dashboard" },
@@ -32,7 +31,7 @@ export const Nav = () => {
         <Link
           key={item.href}
           href={item.href}
-          onClick={() => mobile && setOpen(false)}
+          onClick={() => { if (mobile) setOpen(false); }}
           className={cn(
             "text-sm font-medium transition-colors hover:text-employer-600",
             isActive(item.href)
@@ -59,19 +58,24 @@ export const Nav = () => {
         </nav>
 
         <div className="flex items-center gap-4">
-          {isLoading ? null : user ? (
+          {isLoading ? (
+            <div className="flex items-center gap-4">
+              <div className="hidden h-4 w-32 animate-pulse rounded bg-neutral-200 sm:block" />
+              <div className="h-8 w-20 animate-pulse rounded bg-neutral-200" />
+            </div>
+          ) : user ? (
             <>
               <span className="hidden text-sm text-neutral-600 sm:block">
                 {user.email}
               </span>
-              <a href="/api/auth/logout">
+              <a href="/auth/logout">
                 <Button variant="outline" size="sm">
                   Sign Out
                 </Button>
               </a>
             </>
           ) : (
-            <a href="/api/auth/login">
+            <a href="/auth/login">
               <Button size="sm">Sign In</Button>
             </a>
           )}

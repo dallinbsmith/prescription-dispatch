@@ -9,10 +9,14 @@ export interface PortalMiddlewareConfig {
 }
 
 const decodeJwtPayload = (token: string): Record<string, unknown> => {
-  const parts = token.split(".");
-  if (parts.length !== 3 || !parts[1]) return {};
-  const decoded = Buffer.from(parts[1], "base64").toString("utf-8");
-  return JSON.parse(decoded);
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3 || !parts[1]) return {};
+    const decoded = Buffer.from(parts[1], "base64").toString("utf-8");
+    return JSON.parse(decoded) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
 };
 
 export const createPortalMiddleware = (config: PortalMiddlewareConfig) => {
@@ -37,7 +41,7 @@ export const createPortalMiddleware = (config: PortalMiddlewareConfig) => {
       return NextResponse.redirect(new URL("/auth/login", request.url));
     }
 
-    const idToken = session.tokenSet?.idToken;
+    const idToken = session.tokenSet.idToken;
     const claims = idToken ? decodeJwtPayload(idToken) : {};
     const userRoles = claims[ROLES_CLAIM];
     const roles = (Array.isArray(userRoles) ? userRoles : []) as string[];

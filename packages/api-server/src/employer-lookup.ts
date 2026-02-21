@@ -4,10 +4,22 @@ export interface EmployerAdminUser {
   id: string;
   userId: string;
   employerId: string;
+  firstName: string | null;
+  lastName: string | null;
+  enrollmentUpdates: boolean;
+  monthlyReports: boolean;
+  billingAlerts: boolean;
   createdAt: Date;
   employer: {
     id: string;
     companyName: string;
+    taxId: string | null;
+    industry: string | null;
+    size: string | null;
+    billingStreet: string | null;
+    billingCity: string | null;
+    billingState: string | null;
+    billingZip: string | null;
   };
 }
 
@@ -24,11 +36,23 @@ export const getEmployerAdminFromAuth0Id = async (
           id: true,
           userId: true,
           employerId: true,
+          firstName: true,
+          lastName: true,
+          enrollmentUpdates: true,
+          monthlyReports: true,
+          billingAlerts: true,
           createdAt: true,
           employer: {
             select: {
               id: true,
               companyName: true,
+              taxId: true,
+              industry: true,
+              size: true,
+              billingStreet: true,
+              billingCity: true,
+              billingState: true,
+              billingZip: true,
             },
           },
         },
@@ -36,11 +60,7 @@ export const getEmployerAdminFromAuth0Id = async (
     },
   });
 
-  if (!user || user.role !== "hr_admin") {
-    return null;
-  }
-
-  if (!user.employer) {
+  if (user?.role !== "hr_admin" || !user.employer) {
     return null;
   }
 

@@ -1,25 +1,20 @@
 "use client";
 
+import { useCallback, useEffect, useState, useTransition } from "react";
 
-import { Input } from "@rx/ui/input";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+
+import { useDebounce } from "@rx/hooks";
 import {
+  Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@rx/ui/select";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useTransition } from "react";
+} from "@rx/ui";
 
-const DEPARTMENTS = [
-  "Engineering",
-  "Marketing",
-  "Sales",
-  "HR",
-  "Finance",
-  "Operations",
-];
+import { DEPARTMENTS } from "../api/constants";
 
 const STATUS_OPTIONS = [
   { value: "enrolled", label: "Enrolled" },
@@ -32,6 +27,9 @@ export const EmployeeFilters = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+
+  const [searchValue, setSearchValue] = useState(searchParams.get("search") ?? "");
+  const debouncedSearch = useDebounce(searchValue, 300);
 
   const createQueryString = useCallback(
     (updates: Record<string, string | null>) => {
@@ -52,11 +50,14 @@ export const EmployeeFilters = () => {
     [searchParams]
   );
 
-  const handleSearchChange = (value: string) => {
-    startTransition(() => {
-      router.push(`${pathname}?${createQueryString({ search: value === "" ? null : value })}`);
-    });
-  };
+  useEffect(() => {
+    const currentSearch = searchParams.get("search") ?? "";
+    if (debouncedSearch !== currentSearch) {
+      startTransition(() => {
+        router.push(`${pathname}?${createQueryString({ search: debouncedSearch === "" ? null : debouncedSearch })}`);
+      });
+    }
+  }, [debouncedSearch, searchParams, pathname, router, createQueryString]);
 
   const handleStatusChange = (value: string) => {
     startTransition(() => {
@@ -75,18 +76,17 @@ export const EmployeeFilters = () => {
       <div className="relative flex-1 min-w-[200px] max-w-md">
         <Input
           placeholder="Search employees..."
-          defaultValue={searchParams.get("search") ?? ""}
-          onChange={(e) => {
-            handleSearchChange(e.target.value);
-          }}
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
           className={isPending ? "opacity-50" : ""}
+          aria-label="Search employees by name or email"
         />
       </div>
       <Select
         defaultValue={searchParams.get("status") ?? "all"}
         onValueChange={handleStatusChange}
       >
-        <SelectTrigger className="w-[160px]">
+        <SelectTrigger className="w-[160px]" aria-label="Filter by enrollment status">
           <SelectValue placeholder="Status" />
         </SelectTrigger>
         <SelectContent>
@@ -102,7 +102,7 @@ export const EmployeeFilters = () => {
         defaultValue={searchParams.get("department") ?? "all"}
         onValueChange={handleDepartmentChange}
       >
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-[180px]" aria-label="Filter by department">
           <SelectValue placeholder="Department" />
         </SelectTrigger>
         <SelectContent>

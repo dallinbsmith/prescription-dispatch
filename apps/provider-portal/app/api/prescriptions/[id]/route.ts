@@ -127,7 +127,7 @@ export const GET = withAuth<{ id: string }>(async ({ user, params }) => {
           type: true,
         },
       },
-      order: {
+      orders: {
         select: {
           id: true,
           status: true,

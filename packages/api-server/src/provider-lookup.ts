@@ -14,17 +14,17 @@ export interface ProviderWithDetails {
   compensationModel: string | null;
   createdAt: Date;
   updatedAt: Date;
-  licenses: Array<{
+  licenses: {
     id: string;
     state: string;
     licenseNumber: string;
     expirationDate: Date;
     status: string;
-  }>;
-  specialties: Array<{
+  }[];
+  specialties: {
     id: string;
     specialty: string;
-  }>;
+  }[];
 }
 
 export const getProviderFromAuth0Id = async (

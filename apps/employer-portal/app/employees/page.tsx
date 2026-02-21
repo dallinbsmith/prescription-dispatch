@@ -1,19 +1,24 @@
+import { cookies } from "next/headers";
+import Link from "next/link";
+
+import { Users } from "lucide-react";
+
 import type { Employee, PaginatedResponse } from "@rx/types";
-import { Badge } from "@rx/ui/badge";
-import { Button } from "@rx/ui/button";
-import { EmptyState } from "@rx/ui/empty-state";
 import {
+  Badge,
+  Button,
+  EmptyState,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from "@rx/ui/table";
-import { Users } from "lucide-react";
-import { cookies } from "next/headers";
+} from "@rx/ui";
 
 import { EmployeeFilters } from "./employee-filters";
+import { ExportButton } from "./export-button";
+import { Pagination } from "./pagination";
 
 
 type EmployeesResponse = PaginatedResponse<Employee>;
@@ -33,6 +38,7 @@ const getEmployees = async (searchParams: SearchParams): Promise<EmployeesRespon
     const params = new URLSearchParams({ pageSize: "50" });
     if (searchParams.search) params.set("search", searchParams.search);
     if (searchParams.status) params.set("status", searchParams.status);
+    if (searchParams.department) params.set("department", searchParams.department);
     if (searchParams.page) params.set("page", searchParams.page);
 
     const response = await fetch(`${baseUrl}/api/employees?${params.toString()}`, {
@@ -46,16 +52,7 @@ const getEmployees = async (searchParams: SearchParams): Promise<EmployeesRespon
       return null;
     }
 
-    const result = (await response.json()) as EmployeesResponse;
-
-    if (searchParams.department) {
-      return {
-        ...result,
-        data: result.data.filter((emp) => emp.department === searchParams.department),
-      };
-    }
-
-    return result;
+    return (await response.json()) as EmployeesResponse;
   } catch {
     return null;
   }
@@ -88,7 +85,11 @@ const EmployeesPage = async ({ searchParams }: EmployeesPageProps) => {
   const params = await searchParams;
   const result = await getEmployees(params);
   const employees = result?.data ?? [];
-  const totalCount = result?.pagination.total ?? 0;
+  const pagination = result?.pagination;
+  const totalCount = pagination?.total ?? 0;
+  const currentPage = pagination?.page ?? 1;
+  const pageSize = pagination?.pageSize ?? 50;
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   const hasFilters = Boolean(params.search ?? params.status ?? params.department);
 
@@ -102,7 +103,7 @@ const EmployeesPage = async ({ searchParams }: EmployeesPageProps) => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">Export List</Button>
+          <ExportButton />
           <Button>Invite Employees</Button>
         </div>
       </div>
@@ -110,7 +111,7 @@ const EmployeesPage = async ({ searchParams }: EmployeesPageProps) => {
       <EmployeeFilters />
 
       <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-        <Table>
+        <Table role="table" aria-label="Employee list">
           <TableHeader>
             <TableRow>
               <TableHead>Employee</TableHead>
@@ -139,9 +140,11 @@ const EmployeesPage = async ({ searchParams }: EmployeesPageProps) => {
                   <TableCell>{employee.activePrescriptions}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
-                        View
-                      </Button>
+                      <Link href={`/employees/${employee.id}`}>
+                        <Button variant="outline" size="sm">
+                          View
+                        </Button>
+                      </Link>
                       {employee.enrollmentStatus === "not_enrolled" && (
                         <Button size="sm">Send Invite</Button>
                       )}
@@ -167,6 +170,12 @@ const EmployeesPage = async ({ searchParams }: EmployeesPageProps) => {
             )}
           </TableBody>
         </Table>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalCount={totalCount}
+          pageSize={pageSize}
+        />
       </div>
     </div>
   );

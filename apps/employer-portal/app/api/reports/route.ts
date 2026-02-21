@@ -116,8 +116,8 @@ export const GET = withAuth(async ({ user }) => {
     select: { createdAt: true },
   });
 
-  const lastGeneratedDate = lastOrder
-    ? lastOrder.createdAt.toISOString().split("T")[0]
+  const lastGeneratedDate: string | null = lastOrder
+    ? (lastOrder.createdAt.toISOString().split("T")[0] ?? null)
     : null;
 
   const reportTypes: ReportType[] = REPORT_DEFINITIONS.map((report) => ({

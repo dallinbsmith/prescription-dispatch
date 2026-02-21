@@ -12,17 +12,15 @@ interface OrderWithRelations {
   orderNumber: string;
   status: string;
   trackingNumber: string | null;
-  shippingCarrier: string | null;
-  estimatedDelivery: Date | null;
+  carrier: string | null;
   createdAt: Date;
   prescription: {
-    strength: string | null;
     compound: {
       name: string;
-      defaultStrength: string;
+      defaultStrength: string | null;
     };
   };
-  shippingAddress: {
+  shipAddress: {
     street1: string;
     city: string;
     state: string;
@@ -48,7 +46,7 @@ const OrdersPage = async () => {
   const session = await getSession();
 
   if (!session?.user) {
-    redirect("/api/auth/login");
+    redirect("/auth/login");
   }
 
   const patientId = await getPatientIdFromAuth0Id(session.user.sub);
@@ -76,7 +74,7 @@ const OrdersPage = async () => {
           },
         },
       },
-      shippingAddress: true,
+      shipAddress: true,
     },
     orderBy: { createdAt: "desc" },
   });
@@ -96,7 +94,7 @@ const OrdersPage = async () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {orders.map((order: OrderWithRelations) => (
+          {orders.map((order) => (
             <Card key={order.id}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base font-medium">
@@ -110,7 +108,7 @@ const OrdersPage = async () => {
                     <p className="text-sm text-neutral-500">Medication</p>
                     <p className="font-medium">
                       {order.prescription.compound.name}{" "}
-                      {order.prescription.strength ?? order.prescription.compound.defaultStrength}
+                      {order.prescription.compound.defaultStrength}
                     </p>
                   </div>
                   <div>
@@ -121,14 +119,8 @@ const OrdersPage = async () => {
                     <div>
                       <p className="text-sm text-neutral-500">Tracking</p>
                       <p className="font-medium text-patient-600">
-                        {order.shippingCarrier}: {order.trackingNumber}
+                        {order.carrier}: {order.trackingNumber}
                       </p>
-                    </div>
-                  )}
-                  {order.estimatedDelivery && (
-                    <div>
-                      <p className="text-sm text-neutral-500">Est. Delivery</p>
-                      <p className="font-medium">{formatDate(order.estimatedDelivery)}</p>
                     </div>
                   )}
                 </div>

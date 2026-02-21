@@ -1,9 +1,17 @@
-import type { ReportsData } from "@rx/types";
-import { Button } from "@rx/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@rx/ui/card";
-import { EmptyState } from "@rx/ui/empty-state";
-import { BarChart3, FileText } from "lucide-react";
 import { cookies } from "next/headers";
+
+import { BarChart3, FileText } from "lucide-react";
+
+import type { ReportsData } from "@rx/types";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  EmptyState,
+} from "@rx/ui";
 
 
 interface ReportsResponse {
@@ -104,13 +112,13 @@ const ReportsPage = async () => {
         <CardContent>
           {monthlySummary.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm" role="table" aria-label="Monthly program summary">
                 <thead>
                   <tr className="border-b border-neutral-200">
-                    <th className="pb-3 text-left font-medium text-neutral-500">Month</th>
-                    <th className="pb-3 text-left font-medium text-neutral-500">Enrolled</th>
-                    <th className="pb-3 text-left font-medium text-neutral-500">Claims Processed</th>
-                    <th className="pb-3 text-left font-medium text-neutral-500">Est. Savings</th>
+                    <th scope="col" className="pb-3 text-left font-medium text-neutral-500">Month</th>
+                    <th scope="col" className="pb-3 text-left font-medium text-neutral-500">Enrolled</th>
+                    <th scope="col" className="pb-3 text-left font-medium text-neutral-500">Claims Processed</th>
+                    <th scope="col" className="pb-3 text-left font-medium text-neutral-500">Est. Savings</th>
                   </tr>
                 </thead>
                 <tbody>

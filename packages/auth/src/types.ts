@@ -1,6 +1,6 @@
 import type { UserRole } from "@rx/types";
 
-export const ROLES_CLAIM = "https://prescription-dispatch.com/roles";
+export const ROLES_CLAIM = "https://rxdispatch.com/roles";
 
 export interface Auth0User {
   sub: string;

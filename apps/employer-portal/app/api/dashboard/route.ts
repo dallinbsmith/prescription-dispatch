@@ -76,7 +76,7 @@ export const GET = withAuth(async ({ user }) => {
     id: order.id,
     employeeName: `${order.patient.firstName} ${order.patient.lastName}`,
     action: getActionFromStatus(order.status),
-    date: order.createdAt,
+    date: order.createdAt.toISOString(),
   }));
 
   const enrollmentRate = totalEmployees > 0

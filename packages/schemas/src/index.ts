@@ -248,6 +248,7 @@ export const employeeEnrollmentStatusSchema = z.enum([
 export const employerEmployeeQuerySchema = paginationQuerySchema.extend({
   search: z.string().optional(),
   status: employeeEnrollmentStatusSchema.optional(),
+  department: z.string().optional(),
 });
 
 export const employeeIdParamSchema = z.object({

@@ -209,7 +209,9 @@ export const NotificationsForm = ({ notifications }: NotificationsFormProps) => 
         <form action={formAction} className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium">Enrollment Updates</p>
+              <Label htmlFor="enrollmentUpdates" className="font-medium cursor-pointer">
+                Enrollment Updates
+              </Label>
               <p className="text-sm text-neutral-500">
                 Get notified when employees enroll or unenroll
               </p>
@@ -222,7 +224,9 @@ export const NotificationsForm = ({ notifications }: NotificationsFormProps) => 
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium">Monthly Reports</p>
+              <Label htmlFor="monthlyReports" className="font-medium cursor-pointer">
+                Monthly Reports
+              </Label>
               <p className="text-sm text-neutral-500">
                 Receive automated monthly summary reports
               </p>
@@ -235,7 +239,9 @@ export const NotificationsForm = ({ notifications }: NotificationsFormProps) => 
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium">Billing Alerts</p>
+              <Label htmlFor="billingAlerts" className="font-medium cursor-pointer">
+                Billing Alerts
+              </Label>
               <p className="text-sm text-neutral-500">
                 Get notified about upcoming invoices
               </p>
